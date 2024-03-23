@@ -3,6 +3,7 @@ package com.bunyaminkalkan.api.services;
 import com.bunyaminkalkan.api.entities.Post;
 import com.bunyaminkalkan.api.entities.User;
 import com.bunyaminkalkan.api.repos.PostRepository;
+import com.bunyaminkalkan.api.repos.UserRepository;
 import com.bunyaminkalkan.api.requests.PostCreateRequest;
 import com.bunyaminkalkan.api.requests.PostUpdateRequest;
 import com.bunyaminkalkan.api.responses.PostResponse;
@@ -17,11 +18,11 @@ import java.util.stream.Collectors;
 public class PostService {
 
     private PostRepository postRepository;
-    private UserService userService;
+    private UserRepository userRepository;
 
-    public PostService(PostRepository postRepository, UserService userService) {
+    public PostService(PostRepository postRepository, UserRepository userRepository) {
         this.postRepository = postRepository;
-        this.userService = userService;
+        this.userRepository = userRepository;
     }
 
     public List<PostResponse> getAllPost(Optional<Long> userId) {
@@ -35,7 +36,7 @@ public class PostService {
     }
 
     public PostResponse createOnePost(PostCreateRequest postCreateRequest) {
-        User user = userService.getOneUserById(postCreateRequest.getUserId());
+        User user = userRepository.findById(postCreateRequest.getUserId()).orElse(null);
         if(user == null)
             return null;
         Post toSave = new Post();
