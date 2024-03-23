@@ -48,7 +48,8 @@ public class PostService {
 
     public PostResponse getOnePostById(Long postId) {
         Post post = postRepository.findById(postId).orElse(null);
-        return new PostResponse(post);
+        PostResponse postResponse = new PostResponse(post);
+        return postResponse;
     }
 
     public PostResponse updateOnePost(Long postId, PostUpdateRequest postUpdateRequest) {
@@ -63,5 +64,9 @@ public class PostService {
             post.setText(postUpdateRequest.getText());
         postRepository.save(post);
         return new PostResponse(post);
+    }
+
+    public void deleteOnePost(Long postId) {
+        postRepository.deleteById(postId);
     }
 }
