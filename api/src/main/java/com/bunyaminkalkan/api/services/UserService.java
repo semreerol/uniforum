@@ -4,7 +4,7 @@ import com.bunyaminkalkan.api.entities.User;
 import com.bunyaminkalkan.api.repos.UserRepository;
 import org.springframework.stereotype.Service;
 
-import java.util.List;
+import java.util.Optional;
 
 @Service
 public class UserService {
@@ -13,5 +13,9 @@ public class UserService {
 
     public UserService(UserRepository userRepository) {
         this.userRepository = userRepository;
+    }
+
+    public User getOneUserById(Long userId) {
+        return userRepository.findById(userId).orElse(null);
     }
 }
