@@ -28,7 +28,7 @@ public class UserService {
         return new UserResponse(user);
     }
 
-    public UserResponse getOneUser(Long userId) {
+    public UserResponse getOneUserByID(Long userId) {
         User user = userRepository.findById(userId).orElse(null);
         if (user == null) return null;
         return new UserResponse(user);
@@ -64,4 +64,9 @@ public class UserService {
     public void deleteOneUser(Long userId) {
         userRepository.deleteById(userId);
     }
+
+    public User getOneUserByUserName(String userName) {
+        return userRepository.findByUserName(userName);
+    }
+
 }
