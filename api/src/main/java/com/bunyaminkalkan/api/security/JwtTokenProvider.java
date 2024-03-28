@@ -24,6 +24,13 @@ public class JwtTokenProvider {
                 .signWith(SignatureAlgorithm.HS512, APP_SECRET).compact();
     }
 
+    public String generateJwtTokenByUserName(Long userId) {
+        Date expireDate = new Date(new Date().getTime() + EXPIRES_IN);
+        return Jwts.builder().setSubject(Long.toString(userId))
+                .setIssuedAt(new Date()).setExpiration(expireDate)
+                .signWith(SignatureAlgorithm.HS512, APP_SECRET).compact();
+    }
+
     public Long getUserIdFromJwt(String token){
         Claims claims = Jwts.parser().setSigningKey(APP_SECRET).build().parseSignedClaims(token).getPayload();
         return Long.parseLong(claims.getSubject());
