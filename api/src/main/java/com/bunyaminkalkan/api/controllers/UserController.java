@@ -1,6 +1,8 @@
 package com.bunyaminkalkan.api.controllers;
 
 import com.bunyaminkalkan.api.entities.User;
+import com.bunyaminkalkan.api.exceptions.InvalidUserDataException;
+import com.bunyaminkalkan.api.exceptions.UserNotFoundException;
 import com.bunyaminkalkan.api.responses.UserResponse;
 import com.bunyaminkalkan.api.services.UserService;
 import org.springframework.http.HttpStatus;
@@ -44,4 +46,12 @@ public class UserController {
         userService.deleteOneUser(userId);
         return ResponseEntity.status(HttpStatus.ACCEPTED).build();
     }
+
+    @ExceptionHandler(UserNotFoundException.class)
+    @ResponseStatus(HttpStatus.NOT_FOUND)
+    private void handleUserNotFound(){}
+
+    @ExceptionHandler(InvalidUserDataException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    private void handleInvalidUserData(){}
 }
