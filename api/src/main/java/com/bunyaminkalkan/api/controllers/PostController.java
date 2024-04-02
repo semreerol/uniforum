@@ -1,12 +1,12 @@
 package com.bunyaminkalkan.api.controllers;
 
-import com.bunyaminkalkan.api.entities.Post;
 import com.bunyaminkalkan.api.requests.PostCreateRequest;
 import com.bunyaminkalkan.api.requests.PostUpdateRequest;
 import com.bunyaminkalkan.api.responses.PostResponse;
 import com.bunyaminkalkan.api.services.PostService;
 import jakarta.transaction.Transactional;
-import org.springframework.data.repository.query.Param;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -44,7 +44,8 @@ public class PostController {
     }
 
     @DeleteMapping("/{postId}")
-    public void deleteOnePost(@PathVariable Long postId){
+    public ResponseEntity<?> deleteOnePost(@PathVariable Long postId){
         postService.deleteOnePost(postId);
+        return ResponseEntity.status(HttpStatus.ACCEPTED).build();
     }
 }

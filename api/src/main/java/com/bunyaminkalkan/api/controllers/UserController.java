@@ -3,6 +3,8 @@ package com.bunyaminkalkan.api.controllers;
 import com.bunyaminkalkan.api.entities.User;
 import com.bunyaminkalkan.api.responses.UserResponse;
 import com.bunyaminkalkan.api.services.UserService;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -38,7 +40,8 @@ public class UserController {
     }
 
     @DeleteMapping("/{userId}")
-    public void deleteOneUser(@PathVariable Long userId){
+    public ResponseEntity<?> deleteOneUser(@PathVariable Long userId){
         userService.deleteOneUser(userId);
+        return ResponseEntity.status(HttpStatus.ACCEPTED).build();
     }
 }
