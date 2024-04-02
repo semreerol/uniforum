@@ -4,6 +4,8 @@ import com.bunyaminkalkan.api.requests.CommentCreateRequest;
 import com.bunyaminkalkan.api.requests.CommentUpdateRequest;
 import com.bunyaminkalkan.api.responses.CommentResponse;
 import com.bunyaminkalkan.api.services.CommentService;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -40,8 +42,8 @@ public class CommentController {
     }
 
     @DeleteMapping("/{commentId}")
-    public void deleteOneComment(@PathVariable Long commentId){
+    public ResponseEntity<?> deleteOneComment(@PathVariable Long commentId){
         commentService.deleteOneComment(commentId);
+        return ResponseEntity.status(HttpStatus.ACCEPTED).build();
     }
-
 }
