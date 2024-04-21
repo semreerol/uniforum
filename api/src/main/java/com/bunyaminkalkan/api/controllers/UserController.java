@@ -51,7 +51,4 @@ public class UserController {
     @ResponseStatus(HttpStatus.NOT_FOUND)
     private void handleUserNotFound(){}
 
-    @ExceptionHandler(InvalidUserDataException.class)
-    @ResponseStatus(HttpStatus.BAD_REQUEST)
-    private void handleInvalidUserData(){}
 }
