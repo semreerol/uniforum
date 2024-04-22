@@ -1,14 +1,13 @@
 package com.bunyaminkalkan.api.services;
 
 import com.bunyaminkalkan.api.entities.User;
-import com.bunyaminkalkan.api.exceptions.InvalidUserDataException;
+import com.bunyaminkalkan.api.exceptions.InvalidUserDataRequestException;
 import com.bunyaminkalkan.api.exceptions.UserNotFoundException;
 import com.bunyaminkalkan.api.repos.UserRepository;
 import com.bunyaminkalkan.api.responses.UserResponse;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
@@ -30,7 +29,7 @@ public class UserService {
             User user = userRepository.save(newUser);
             return new UserResponse(user);
         }catch (Exception e) {
-            throw new InvalidUserDataException();
+            throw new InvalidUserDataRequestException("Can not create user");
         }
     }
 
@@ -43,7 +42,7 @@ public class UserService {
         try {
             User user = userRepository.findById(userId).orElseThrow(UserNotFoundException::new);
             if (!isValidUserData(newUser)) {
-                throw new InvalidUserDataException();
+                throw new InvalidUserDataRequestException("Can not update user");
             }
 
             if (newUser.getUserName() != null) {
@@ -68,8 +67,8 @@ public class UserService {
             userRepository.save(user);
             return new UserResponse(user);
 
-        } catch (InvalidUserDataException e) {
-            throw new InvalidUserDataException();
+        } catch (Exception e) {
+            throw new InvalidUserDataRequestException(e.getMessage());
         }
     }
 
