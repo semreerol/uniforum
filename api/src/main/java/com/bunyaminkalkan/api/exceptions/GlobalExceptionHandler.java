@@ -5,20 +5,19 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 
+
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 
 @ControllerAdvice
-public class InvalidUserDataExceptionHandler {
+public class GlobalExceptionHandler {
 
-    @ExceptionHandler(value = {InvalidUserDataRequestException.class})
-    public ResponseEntity<Object> handleIUDRequestException(InvalidUserDataException e) {
-        HttpStatus badRequest = HttpStatus.BAD_REQUEST;
-        InvalidUserDataException invalidUserDataException = new InvalidUserDataException(
+    @ExceptionHandler(InvalidUserDataRequestException.class)
+    public ResponseEntity<Object> handleIUDRequestException(InvalidUserDataRequestException e) {
+        InvalidUserDataResponse invalidUserDataResponse = new InvalidUserDataResponse(
                 e.getMessage(),
-                badRequest,
                 ZonedDateTime.now(ZoneId.of("Europe/Istanbul"))
         );
-        return new ResponseEntity<>(invalidUserDataException, badRequest);
+        return new ResponseEntity<>(invalidUserDataResponse, HttpStatus.BAD_REQUEST);
     }
 }

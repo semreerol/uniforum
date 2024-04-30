@@ -1,7 +1,6 @@
 package com.bunyaminkalkan.api.controllers;
 
 import com.bunyaminkalkan.api.entities.User;
-import com.bunyaminkalkan.api.exceptions.InvalidUserDataException;
 import com.bunyaminkalkan.api.exceptions.UserNotFoundException;
 import com.bunyaminkalkan.api.responses.UserResponse;
 import com.bunyaminkalkan.api.services.UserService;

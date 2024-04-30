@@ -29,7 +29,7 @@ public class UserService {
             User user = userRepository.save(newUser);
             return new UserResponse(user);
         }catch (Exception e) {
-            throw new InvalidUserDataRequestException("Can not create user");
+            throw new InvalidUserDataRequestException("Could not create user");
         }
     }
 
@@ -42,7 +42,7 @@ public class UserService {
         try {
             User user = userRepository.findById(userId).orElseThrow(UserNotFoundException::new);
             if (!isValidUserData(newUser)) {
-                throw new InvalidUserDataRequestException("Can not update user");
+                throw new InvalidUserDataRequestException("Invalid user data");
             }
 
             if (newUser.getUserName() != null) {
@@ -67,8 +67,8 @@ public class UserService {
             userRepository.save(user);
             return new UserResponse(user);
 
-        } catch (Exception e) {
-            throw new InvalidUserDataRequestException(e.getMessage());
+        } catch (InvalidUserDataRequestException e) {
+            throw new InvalidUserDataRequestException("Invalid user data");
         }
     }
 
