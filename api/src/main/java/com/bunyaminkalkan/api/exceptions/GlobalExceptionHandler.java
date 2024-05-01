@@ -14,10 +14,10 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(InvalidUserDataRequestException.class)
     public ResponseEntity<Object> handleIUDRequestException(InvalidUserDataRequestException e) {
-        InvalidUserDataResponse invalidUserDataResponse = new InvalidUserDataResponse(
+        ExceptionResponse exceptionResponse = new ExceptionResponse(
                 e.getMessage(),
                 ZonedDateTime.now(ZoneId.of("Europe/Istanbul"))
         );
-        return new ResponseEntity<>(invalidUserDataResponse, HttpStatus.BAD_REQUEST);
+        return new ResponseEntity<>(exceptionResponse, HttpStatus.BAD_REQUEST);
     }
 }
