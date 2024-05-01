@@ -2,7 +2,7 @@ package com.bunyaminkalkan.api.services;
 
 import com.bunyaminkalkan.api.entities.User;
 import com.bunyaminkalkan.api.exceptions.InvalidUserDataRequestException;
-import com.bunyaminkalkan.api.exceptions.UserNotFoundException;
+import com.bunyaminkalkan.api.exceptions.UserNotFoundRequestException;
 import com.bunyaminkalkan.api.repos.UserRepository;
 import com.bunyaminkalkan.api.responses.UserResponse;
 import org.springframework.stereotype.Service;
@@ -34,13 +34,13 @@ public class UserService {
     }
 
     public UserResponse getOneUserByID(Long userId) {
-        User user = userRepository.findById(userId).orElseThrow(UserNotFoundException::new);
+        User user = userRepository.findById(userId).orElseThrow(() -> new UserNotFoundRequestException("User not found"));
         return new UserResponse(user);
     }
 
     public UserResponse updateOneUser(Long userId, User newUser) {
         try {
-            User user = userRepository.findById(userId).orElseThrow(UserNotFoundException::new);
+            User user = userRepository.findById(userId).orElseThrow(() -> new UserNotFoundRequestException("User not found"));
             if (!isValidUserData(newUser)) {
                 throw new InvalidUserDataRequestException("Invalid user data");
             }

@@ -20,4 +20,13 @@ public class GlobalExceptionHandler {
         );
         return new ResponseEntity<>(exceptionResponse, HttpStatus.BAD_REQUEST);
     }
+
+    @ExceptionHandler(UserNotFoundRequestException.class)
+    public ResponseEntity<Object> handleUserNotFoundRequestException(UserNotFoundRequestException e) {
+        ExceptionResponse exceptionResponse = new ExceptionResponse(
+                e.getMessage(),
+                ZonedDateTime.now(ZoneId.of("Europe/Istanbul"))
+        );
+        return new ResponseEntity<>(exceptionResponse, HttpStatus.NOT_FOUND);
+    }
 }
