@@ -13,11 +13,24 @@ import java.time.ZonedDateTime;
 public class GlobalExceptionHandler {
 
     @ExceptionHandler(InvalidUserDataRequestException.class)
-    public ResponseEntity<Object> handleIUDRequestException(InvalidUserDataRequestException e) {
-        InvalidUserDataResponse invalidUserDataResponse = new InvalidUserDataResponse(
-                e.getMessage(),
+    public ResponseEntity<Object> handleInvalidUserDataRequestException(InvalidUserDataRequestException e) {
+        return new ResponseEntity<>(createExceptionResponse(e.getMessage()), HttpStatus.BAD_REQUEST);
+    }
+
+    @ExceptionHandler(UserNotFoundRequestException.class)
+    public ResponseEntity<Object> handleUserNotFoundRequestException(UserNotFoundRequestException e) {
+        return new ResponseEntity<>(createExceptionResponse(e.getMessage()), HttpStatus.NOT_FOUND);
+    }
+
+    @ExceptionHandler(RefreshTokenIsNotValidRequestException.class)
+    public ResponseEntity<Object> handleRefreshTokenIsNotValidRequestException(RefreshTokenIsNotValidRequestException e) {
+        return new ResponseEntity<>(createExceptionResponse(e.getMessage()), HttpStatus.BAD_REQUEST);
+    }
+
+    private Object createExceptionResponse(String message) {
+        return new ExceptionResponse(
+                message,
                 ZonedDateTime.now(ZoneId.of("Europe/Istanbul"))
         );
-        return new ResponseEntity<>(invalidUserDataResponse, HttpStatus.BAD_REQUEST);
     }
 }

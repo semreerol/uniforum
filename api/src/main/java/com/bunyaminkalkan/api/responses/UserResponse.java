@@ -15,7 +15,7 @@ public class UserResponse {
 
     public UserResponse(User entity) {
         this.id = entity.getId();
-        this.userName = entity.getUserName();
+        this.userName = entity.getUsername();
         this.email = entity.getEmail();
         this.firstName = entity.getFirstName();
         this.lastName = entity.getLastName();
