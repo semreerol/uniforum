@@ -28,7 +28,7 @@ public class UserService {
         try {
             User user = userRepository.save(newUser);
             return new UserResponse(user);
-        }catch (Exception e) {
+        } catch (Exception e) {
             throw new InvalidUserDataRequestException("Could not create user");
         }
     }
@@ -39,41 +39,41 @@ public class UserService {
     }
 
     public UserResponse updateOneUser(Long userId, User newUser) {
-        try {
-            User user = userRepository.findById(userId).orElseThrow(() -> new UserNotFoundRequestException("User not found"));
-            if (!isValidUserData(newUser)) {
-                throw new InvalidUserDataRequestException("Invalid user data");
-            }
-
-            if (newUser.getUserName() != null) {
-                user.setUserName(newUser.getUserName());
-            }
-            if (newUser.getEmail() != null) {
-                user.setEmail(newUser.getEmail());
-            }
-            if (newUser.getFirstName() != null) {
-                user.setFirstName(newUser.getFirstName());
-            }
-            if (newUser.getLastName() != null) {
-                user.setLastName(newUser.getLastName());
-            }
-            if (newUser.getPassword() != null) {
-                user.setPassword(newUser.getPassword());
-            }
-            if (newUser.getProfilePhoto() != null) {
-                user.setProfilePhoto(newUser.getProfilePhoto());
-            }
-
-            userRepository.save(user);
-            return new UserResponse(user);
-
-        } catch (InvalidUserDataRequestException e) {
+        User user = userRepository.findById(userId).orElseThrow(() -> new UserNotFoundRequestException("User not found"));
+        if (!isValidUserData(newUser)) {
             throw new InvalidUserDataRequestException("Invalid user data");
         }
+        if (newUser.getUserName() != null) {
+            user.setUserName(newUser.getUserName());
+        }
+        if (newUser.getEmail() != null) {
+            user.setEmail(newUser.getEmail());
+        }
+        if (newUser.getFirstName() != null) {
+            user.setFirstName(newUser.getFirstName());
+        }
+        if (newUser.getLastName() != null) {
+            user.setLastName(newUser.getLastName());
+        }
+        if (newUser.getPassword() != null) {
+            user.setPassword(newUser.getPassword());
+        }
+        if (newUser.getProfilePhoto() != null) {
+            user.setProfilePhoto(newUser.getProfilePhoto());
+        }
+
+        userRepository.save(user);
+        return new UserResponse(user);
+
     }
 
     public void deleteOneUser(Long userId) {
-        userRepository.deleteById(userId);
+        boolean isFound = userRepository.existsById(userId);
+        if (isFound) {
+            userRepository.deleteById(userId);
+        }else {
+            throw new UserNotFoundRequestException("User not found");
+        }
     }
 
     public User getOneUserByUserName(String userName) {
