@@ -43,8 +43,8 @@ public class UserService {
         if (!isValidUserData(newUser)) {
             throw new InvalidUserDataRequestException("Invalid user data");
         }
-        if (newUser.getUserName() != null) {
-            user.setUserName(newUser.getUserName());
+        if (newUser.getUsername() != null) {
+            user.setUserName(newUser.getUsername());
         }
         if (newUser.getEmail() != null) {
             user.setEmail(newUser.getEmail());
@@ -77,11 +77,11 @@ public class UserService {
     }
 
     public User getOneUserByUserName(String userName) {
-        return userRepository.findByUserName(userName);
+        return userRepository.findByUserName(userName).orElseThrow(() -> new UserNotFoundRequestException("User not found"));
     }
 
     private boolean isValidUserData(User user) {
-        return !(user.getUserName() == null)
+        return !(user.getUsername() == null)
                 || !(user.getEmail() == null)
                 || !(user.getFirstName() == null)
                 || !(user.getLastName() == null)

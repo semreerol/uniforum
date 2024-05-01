@@ -3,9 +3,10 @@ package com.bunyaminkalkan.api.requests;
 import lombok.Data;
 
 @Data
-public class UserCreateRequest {
+public class RegisterRequest {
 
     String userName;
     String email;
     String password;
 }
+
