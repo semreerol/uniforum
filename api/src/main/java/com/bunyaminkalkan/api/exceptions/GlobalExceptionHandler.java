@@ -2,6 +2,7 @@ package com.bunyaminkalkan.api.exceptions;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 
@@ -12,19 +13,24 @@ import java.time.ZonedDateTime;
 @ControllerAdvice
 public class GlobalExceptionHandler {
 
-    @ExceptionHandler(InvalidUserDataRequestException.class)
-    public ResponseEntity<Object> handleInvalidUserDataRequestException(InvalidUserDataRequestException e) {
+    @ExceptionHandler(BadRequestException.class)
+    public ResponseEntity<Object> handleBadRequestException(BadRequestException e) {
         return new ResponseEntity<>(createExceptionResponse(e.getMessage()), HttpStatus.BAD_REQUEST);
     }
 
-    @ExceptionHandler(UserNotFoundRequestException.class)
-    public ResponseEntity<Object> handleUserNotFoundRequestException(UserNotFoundRequestException e) {
+    @ExceptionHandler(UnauthorizedException.class)
+    public ResponseEntity<Object> handleUnauthorizedException(UnauthorizedException e) {
+        return new ResponseEntity<>(createExceptionResponse(e.getMessage()), HttpStatus.UNAUTHORIZED);
+    }
+
+    @ExceptionHandler(ForbiddenException.class)
+    public ResponseEntity<Object> handleForbiddenException(ForbiddenException e) {
+        return new ResponseEntity<>(createExceptionResponse(e.getMessage()), HttpStatus.FORBIDDEN);
+    }
+
+    @ExceptionHandler(NotFoundException.class)
+    public ResponseEntity<Object> handleNotFoundException(NotFoundException e) {
         return new ResponseEntity<>(createExceptionResponse(e.getMessage()), HttpStatus.NOT_FOUND);
-    }
-
-    @ExceptionHandler(RefreshTokenIsNotValidRequestException.class)
-    public ResponseEntity<Object> handleRefreshTokenIsNotValidRequestException(RefreshTokenIsNotValidRequestException e) {
-        return new ResponseEntity<>(createExceptionResponse(e.getMessage()), HttpStatus.BAD_REQUEST);
     }
 
     private Object createExceptionResponse(String message) {

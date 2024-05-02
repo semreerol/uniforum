@@ -1,23 +1,26 @@
 package com.bunyaminkalkan.api.services;
 
 import com.bunyaminkalkan.api.entities.User;
-import com.bunyaminkalkan.api.exceptions.InvalidUserDataRequestException;
-import com.bunyaminkalkan.api.exceptions.UserNotFoundRequestException;
+import com.bunyaminkalkan.api.exceptions.BadRequestException;
+import com.bunyaminkalkan.api.exceptions.ForbiddenException;
+import com.bunyaminkalkan.api.exceptions.NotFoundException;
+import com.bunyaminkalkan.api.exceptions.UnauthorizedException;
 import com.bunyaminkalkan.api.repos.UserRepository;
 import com.bunyaminkalkan.api.responses.UserResponse;
+import com.bunyaminkalkan.api.security.JwtService;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpHeaders;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.stream.Collectors;
 
 @Service
+@RequiredArgsConstructor
 public class UserService {
 
     private final UserRepository userRepository;
-
-    public UserService(UserRepository userRepository) {
-        this.userRepository = userRepository;
-    }
+    private final JwtService jwtService;
 
     public List<UserResponse> getAllUsers() {
         List<User> list = userRepository.findAll();
@@ -25,23 +28,58 @@ public class UserService {
     }
 
     public UserResponse createOneUser(User newUser) {
+        User foundUser = userRepository.findByUserName(newUser.getUsername()).orElse(null);
+        if (foundUser != null) {
+            throw new BadRequestException("Username already exists");
+        }
         try {
             User user = userRepository.save(newUser);
             return new UserResponse(user);
         } catch (Exception e) {
-            throw new InvalidUserDataRequestException("Could not create user");
+            throw new BadRequestException("Could not create user");
         }
     }
 
     public UserResponse getOneUserByID(Long userId) {
-        User user = userRepository.findById(userId).orElseThrow(() -> new UserNotFoundRequestException("User not found"));
+        User user = userRepository.findById(userId).orElseThrow(() -> new NotFoundException("User not found"));
         return new UserResponse(user);
     }
 
-    public UserResponse updateOneUser(Long userId, User newUser) {
-        User user = userRepository.findById(userId).orElseThrow(() -> new UserNotFoundRequestException("User not found"));
+    public UserResponse updateOneUser(HttpHeaders headers, Long userId, User newUser) {
+        User user = userRepository.findById(userId).orElseThrow(() -> new NotFoundException("User not found"));
+        boolean isOwn = isOwnData(headers, user);
+
+        if (!isOwn) {
+            throw new ForbiddenException("You don't have permission to update this user");
+        }
+
+        updateUser(user, newUser);
+
+        try {
+            userRepository.save(user);
+            return new UserResponse(user);
+        } catch (Exception e) {
+            throw new BadRequestException("Could not update user");
+        }
+    }
+
+    public void deleteOneUser(HttpHeaders headers, Long userId) {
+        User user = userRepository.findById(userId).orElseThrow(() -> new NotFoundException("User not found"));
+        boolean isOwn = isOwnData(headers, user);
+        if (isOwn) {
+            userRepository.delete(user);
+        } else {
+            throw new ForbiddenException("You don't have permission to delete this user");
+        }
+    }
+
+    public User getOneUserByUserName(String userName) {
+        return userRepository.findByUserName(userName).orElseThrow(() -> new NotFoundException("User not found"));
+    }
+
+    private void updateUser(User user, User newUser) {
         if (!isValidUserData(newUser)) {
-            throw new InvalidUserDataRequestException("Invalid user data");
+            throw new BadRequestException("Invalid user data");
         }
         if (newUser.getUsername() != null) {
             user.setUserName(newUser.getUsername());
@@ -61,23 +99,16 @@ public class UserService {
         if (newUser.getProfilePhoto() != null) {
             user.setProfilePhoto(newUser.getProfilePhoto());
         }
-
-        userRepository.save(user);
-        return new UserResponse(user);
-
     }
 
-    public void deleteOneUser(Long userId) {
-        boolean isFound = userRepository.existsById(userId);
-        if (isFound) {
-            userRepository.deleteById(userId);
-        }else {
-            throw new UserNotFoundRequestException("User not found");
+    private boolean isOwnData(HttpHeaders headers, User user) {
+        String authHeader = headers.getFirst(HttpHeaders.AUTHORIZATION);
+        if (authHeader != null && authHeader.startsWith("Bearer ")) {
+            String token = authHeader.substring(7);
+            return jwtService.isTokenValid(token, user);
+        } else {
+            throw new UnauthorizedException("Unauthorized");
         }
-    }
-
-    public User getOneUserByUserName(String userName) {
-        return userRepository.findByUserName(userName).orElseThrow(() -> new UserNotFoundRequestException("User not found"));
     }
 
     private boolean isValidUserData(User user) {

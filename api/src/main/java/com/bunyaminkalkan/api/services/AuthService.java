@@ -3,7 +3,7 @@ package com.bunyaminkalkan.api.services;
 import com.bunyaminkalkan.api.entities.RefreshToken;
 import com.bunyaminkalkan.api.entities.Role;
 import com.bunyaminkalkan.api.entities.User;
-import com.bunyaminkalkan.api.exceptions.RefreshTokenIsNotValidRequestException;
+import com.bunyaminkalkan.api.exceptions.BadRequestException;
 import com.bunyaminkalkan.api.repos.UserRepository;
 import com.bunyaminkalkan.api.requests.LoginRequest;
 import com.bunyaminkalkan.api.requests.RefreshRequest;
@@ -63,7 +63,7 @@ public class AuthService {
 
             return new AuthResponse().builder().userId(user.getId()).accessToken(jwtToken).refreshToken(refreshTokenService.createRefreshToken(user)).message("Refresh successfully").build();
         }else {
-            throw new RefreshTokenIsNotValidRequestException("Refresh Token is not valid");
+            throw new BadRequestException("Refresh Token is not valid");
         }
     }
 }
