@@ -1,5 +1,6 @@
 package com.bunyaminkalkan.api.config;
 
+import com.bunyaminkalkan.api.exceptions.UserNotFoundRequestException;
 import com.bunyaminkalkan.api.repos.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
@@ -21,7 +22,7 @@ public class ApplicationConfig {
 
     @Bean
     public UserDetailsService userDetailsService() {
-        return username -> userRepository.findByUserName(username).orElseThrow(() -> new UsernameNotFoundException("User not found"));
+        return username -> userRepository.findByUserName(username).orElseThrow(() -> new UserNotFoundRequestException("User not found"));
     }
 
     @Bean

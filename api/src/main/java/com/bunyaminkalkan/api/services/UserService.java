@@ -5,19 +5,20 @@ import com.bunyaminkalkan.api.exceptions.InvalidUserDataRequestException;
 import com.bunyaminkalkan.api.exceptions.UserNotFoundRequestException;
 import com.bunyaminkalkan.api.repos.UserRepository;
 import com.bunyaminkalkan.api.responses.UserResponse;
+import com.bunyaminkalkan.api.security.JwtService;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpHeaders;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.stream.Collectors;
 
 @Service
+@RequiredArgsConstructor
 public class UserService {
 
     private final UserRepository userRepository;
-
-    public UserService(UserRepository userRepository) {
-        this.userRepository = userRepository;
-    }
+    private final JwtService jwtService;
 
     public List<UserResponse> getAllUsers() {
         List<User> list = userRepository.findAll();
@@ -38,8 +39,15 @@ public class UserService {
         return new UserResponse(user);
     }
 
-    public UserResponse updateOneUser(Long userId, User newUser) {
+    public UserResponse updateOneUser(HttpHeaders headers, Long userId, User newUser) {
         User user = userRepository.findById(userId).orElseThrow(() -> new UserNotFoundRequestException("User not found"));
+        String authHeader = headers.getFirst(HttpHeaders.AUTHORIZATION);
+        if (authHeader != null && authHeader.startsWith("Bearer ")) {
+            String token = authHeader.substring(7);
+            if (!jwtService.isTokenValid(token, user)) {
+                throw new InvalidUserDataRequestException("Invalid token");
+            }
+        }
         if (!isValidUserData(newUser)) {
             throw new InvalidUserDataRequestException("Invalid user data");
         }
