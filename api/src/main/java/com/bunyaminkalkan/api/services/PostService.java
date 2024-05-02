@@ -2,11 +2,18 @@ package com.bunyaminkalkan.api.services;
 
 import com.bunyaminkalkan.api.entities.Post;
 import com.bunyaminkalkan.api.entities.User;
+import com.bunyaminkalkan.api.exceptions.BadRequestException;
+import com.bunyaminkalkan.api.exceptions.ForbiddenException;
+import com.bunyaminkalkan.api.exceptions.NotFoundException;
+import com.bunyaminkalkan.api.exceptions.UnauthorizedException;
 import com.bunyaminkalkan.api.repos.PostRepository;
 import com.bunyaminkalkan.api.repos.UserRepository;
 import com.bunyaminkalkan.api.requests.PostCreateRequest;
 import com.bunyaminkalkan.api.requests.PostUpdateRequest;
 import com.bunyaminkalkan.api.responses.PostResponse;
+import com.bunyaminkalkan.api.security.JwtService;
+import lombok.AllArgsConstructor;
+import org.springframework.http.HttpHeaders;
 import org.springframework.stereotype.Service;
 
 import java.util.Date;
@@ -15,15 +22,13 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
+@AllArgsConstructor
 public class PostService {
 
-    private PostRepository postRepository;
-    private UserRepository userRepository;
+    private final PostRepository postRepository;
+    private final UserRepository userRepository;
+    private final JwtService jwtService;
 
-    public PostService(PostRepository postRepository, UserRepository userRepository) {
-        this.postRepository = postRepository;
-        this.userRepository = userRepository;
-    }
 
     public List<PostResponse> getAllPost(Optional<Long> userId) {
         List<Post> list;
@@ -35,10 +40,8 @@ public class PostService {
         return list.stream().map(PostResponse::new).collect(Collectors.toList());
     }
 
-    public PostResponse createOnePost(PostCreateRequest postCreateRequest) {
-        User user = userRepository.findById(postCreateRequest.getUserId()).orElse(null);
-        if(user == null)
-            return null;
+    public PostResponse createOnePost(HttpHeaders headers, PostCreateRequest postCreateRequest) {
+        User user = getUserFromHeaders(headers);
         Post toSave = new Post();
         toSave.setUser(user);
         toSave.setText(postCreateRequest.getText());
@@ -53,10 +56,12 @@ public class PostService {
         return postResponse;
     }
 
-    public PostResponse updateOnePost(Long postId, PostUpdateRequest postUpdateRequest) {
-        Post post = postRepository.findById(postId).orElse(null);
-        if(post == null)
-            return null;
+    public PostResponse updateOnePost(HttpHeaders headers, Long postId, PostUpdateRequest postUpdateRequest) {
+        User user = getUserFromHeaders(headers);
+        Post post = postRepository.findById(postId).orElseThrow(() -> new NotFoundException("Post not found"));
+        if (!isUserTheAuthorOfPost(user, post)){
+            throw new ForbiddenException("You are not allowed to update this post");
+        }
         if(postUpdateRequest.getLikeCount() != null)
             post.setLikeCount(postUpdateRequest.getLikeCount());
         if(postUpdateRequest.getDislikeCount() != null)
@@ -67,7 +72,35 @@ public class PostService {
         return new PostResponse(post);
     }
 
-    public void deleteOnePost(Long postId) {
-        postRepository.deleteById(postId);
+    public void deleteOnePost(HttpHeaders headers, Long postId) {
+        User user = getUserFromHeaders(headers);
+        Post post = postRepository.findById(postId).orElseThrow(() -> new NotFoundException("Post not found"));
+        if (!isUserTheAuthorOfPost(user, post)){
+            throw new ForbiddenException("You are not authorized to delete this post");
+        }
+        try {
+            postRepository.delete(post);
+        } catch (Exception e) {
+            throw new BadRequestException("Post not deleted");
+        }
+
+    }
+
+    protected User getUserFromHeaders(HttpHeaders headers) {
+        String authHeader = headers.getFirst(HttpHeaders.AUTHORIZATION);
+        String token;
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            throw new UnauthorizedException("Unauthorized");
+        } else {
+            token = authHeader.substring(7);
+        }
+        String username = jwtService.extractUserName(token);
+        return userRepository.findByUserName(username).orElseThrow(() -> new NotFoundException("User not found"));
+    }
+
+    private boolean isUserTheAuthorOfPost(User user, Post post) {
+        Long userId = user.getId();
+        Long postUserId = post.getUser().getId();
+        return userId.equals(postUserId);
     }
 }
