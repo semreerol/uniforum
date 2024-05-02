@@ -41,8 +41,8 @@ public class UserController {
     }
 
     @DeleteMapping("/{userId}")
-    public ResponseEntity<?> deleteOneUser(@PathVariable Long userId){
-        userService.deleteOneUser(userId);
+    public ResponseEntity<?> deleteOneUser(@RequestHeader HttpHeaders headers, @PathVariable Long userId){
+        userService.deleteOneUser(headers, userId);
         return ResponseEntity.status(HttpStatus.ACCEPTED).build();
     }
 }
