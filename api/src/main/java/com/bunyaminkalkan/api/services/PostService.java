@@ -76,17 +76,17 @@ public class PostService {
         User user = getUserFromHeaders(headers);
         Post post = postRepository.findById(postId).orElseThrow(() -> new NotFoundException("Post not found"));
         if (!isUserTheAuthorOfPost(user, post)){
-            throw new ForbiddenException("You are not allowed to delete this post");
+            throw new ForbiddenException("You are not authorized to delete this post");
         }
         try {
             postRepository.delete(post);
         } catch (Exception e) {
-            throw new BadRequestException("Post could not be deleted");
+            throw new BadRequestException("Post not deleted");
         }
 
     }
 
-    private User getUserFromHeaders(HttpHeaders headers) {
+    protected User getUserFromHeaders(HttpHeaders headers) {
         String authHeader = headers.getFirst(HttpHeaders.AUTHORIZATION);
         String token;
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
@@ -100,7 +100,7 @@ public class PostService {
 
     private boolean isUserTheAuthorOfPost(User user, Post post) {
         Long userId = user.getId();
-        Long post_userId = post.getUser().getId();
-        return userId.equals(post_userId);
+        Long postUserId = post.getUser().getId();
+        return userId.equals(postUserId);
     }
 }

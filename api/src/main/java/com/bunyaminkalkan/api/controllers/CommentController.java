@@ -4,6 +4,7 @@ import com.bunyaminkalkan.api.requests.CommentCreateRequest;
 import com.bunyaminkalkan.api.requests.CommentUpdateRequest;
 import com.bunyaminkalkan.api.responses.CommentResponse;
 import com.bunyaminkalkan.api.services.CommentService;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -27,8 +28,8 @@ public class CommentController {
     }
 
     @PostMapping
-    public CommentResponse createOnePost(@RequestBody CommentCreateRequest commentCreateRequest){
-        return commentService.createOneComment(commentCreateRequest);
+    public CommentResponse createOnePost(@RequestHeader HttpHeaders headers, @RequestBody CommentCreateRequest commentCreateRequest){
+        return commentService.createOneComment(headers, commentCreateRequest);
     }
 
     @GetMapping("/{commentId}")
@@ -37,13 +38,13 @@ public class CommentController {
     }
 
     @PutMapping("/{commentId}")
-    public CommentResponse updateOneComment(@PathVariable Long commentId, @RequestBody CommentUpdateRequest commentUpdateRequest){
-        return commentService.updateOneComment(commentId, commentUpdateRequest);
+    public CommentResponse updateOneComment(@RequestHeader HttpHeaders headers, @PathVariable Long commentId, @RequestBody CommentUpdateRequest commentUpdateRequest){
+        return commentService.updateOneComment(headers, commentId, commentUpdateRequest);
     }
 
     @DeleteMapping("/{commentId}")
-    public ResponseEntity<?> deleteOneComment(@PathVariable Long commentId){
-        commentService.deleteOneComment(commentId);
+    public ResponseEntity<?> deleteOneComment(@RequestHeader HttpHeaders headers, @PathVariable Long commentId){
+        commentService.deleteOneComment(headers, commentId);
         return ResponseEntity.status(HttpStatus.ACCEPTED).build();
     }
 }
