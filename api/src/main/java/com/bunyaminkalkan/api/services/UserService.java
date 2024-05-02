@@ -1,8 +1,8 @@
 package com.bunyaminkalkan.api.services;
 
 import com.bunyaminkalkan.api.entities.User;
-import com.bunyaminkalkan.api.exceptions.InvalidUserDataRequestException;
-import com.bunyaminkalkan.api.exceptions.UserNotFoundRequestException;
+import com.bunyaminkalkan.api.exceptions.BadRequestException;
+import com.bunyaminkalkan.api.exceptions.NotFoundException;
 import com.bunyaminkalkan.api.repos.UserRepository;
 import com.bunyaminkalkan.api.responses.UserResponse;
 import com.bunyaminkalkan.api.security.JwtService;
@@ -30,26 +30,26 @@ public class UserService {
             User user = userRepository.save(newUser);
             return new UserResponse(user);
         } catch (Exception e) {
-            throw new InvalidUserDataRequestException("Could not create user");
+            throw new BadRequestException("Could not create user");
         }
     }
 
     public UserResponse getOneUserByID(Long userId) {
-        User user = userRepository.findById(userId).orElseThrow(() -> new UserNotFoundRequestException("User not found"));
+        User user = userRepository.findById(userId).orElseThrow(() -> new NotFoundException("User not found"));
         return new UserResponse(user);
     }
 
     public UserResponse updateOneUser(HttpHeaders headers, Long userId, User newUser) {
-        User user = userRepository.findById(userId).orElseThrow(() -> new UserNotFoundRequestException("User not found"));
+        User user = userRepository.findById(userId).orElseThrow(() -> new NotFoundException("User not found"));
         String authHeader = headers.getFirst(HttpHeaders.AUTHORIZATION);
         if (authHeader != null && authHeader.startsWith("Bearer ")) {
             String token = authHeader.substring(7);
             if (!jwtService.isTokenValid(token, user)) {
-                throw new InvalidUserDataRequestException("Invalid token");
+                throw new BadRequestException("Invalid token");
             }
         }
         if (!isValidUserData(newUser)) {
-            throw new InvalidUserDataRequestException("Invalid user data");
+            throw new BadRequestException("Invalid user data");
         }
         if (newUser.getUsername() != null) {
             user.setUserName(newUser.getUsername());
@@ -80,12 +80,12 @@ public class UserService {
         if (isFound) {
             userRepository.deleteById(userId);
         }else {
-            throw new UserNotFoundRequestException("User not found");
+            throw new NotFoundException("User not found");
         }
     }
 
     public User getOneUserByUserName(String userName) {
-        return userRepository.findByUserName(userName).orElseThrow(() -> new UserNotFoundRequestException("User not found"));
+        return userRepository.findByUserName(userName).orElseThrow(() -> new NotFoundException("User not found"));
     }
 
     private boolean isValidUserData(User user) {
