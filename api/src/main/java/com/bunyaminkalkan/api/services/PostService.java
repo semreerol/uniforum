@@ -26,7 +26,6 @@ import java.util.stream.Collectors;
 public class PostService {
 
     private final PostRepository postRepository;
-    private final UserRepository userRepository;
     private final JwtService jwtService;
 
 
@@ -41,7 +40,7 @@ public class PostService {
     }
 
     public PostResponse createOnePost(HttpHeaders headers, PostCreateRequest postCreateRequest) {
-        User user = getUserFromHeaders(headers);
+        User user = jwtService.getUserFromHeaders(headers);
         Post toSave = new Post();
         toSave.setUser(user);
         toSave.setText(postCreateRequest.getText());
@@ -57,7 +56,7 @@ public class PostService {
     }
 
     public PostResponse updateOnePost(HttpHeaders headers, Long postId, PostUpdateRequest postUpdateRequest) {
-        User user = getUserFromHeaders(headers);
+        User user = jwtService.getUserFromHeaders(headers);
         Post post = postRepository.findById(postId).orElseThrow(() -> new NotFoundException("Post not found"));
         if (!isUserTheAuthorOfPost(user, post)){
             throw new ForbiddenException("You are not allowed to update this post");
@@ -73,7 +72,7 @@ public class PostService {
     }
 
     public void deleteOnePost(HttpHeaders headers, Long postId) {
-        User user = getUserFromHeaders(headers);
+        User user = jwtService.getUserFromHeaders(headers);
         Post post = postRepository.findById(postId).orElseThrow(() -> new NotFoundException("Post not found"));
         if (!isUserTheAuthorOfPost(user, post)){
             throw new ForbiddenException("You are not authorized to delete this post");
@@ -84,18 +83,6 @@ public class PostService {
             throw new BadRequestException("Post not deleted");
         }
 
-    }
-
-    protected User getUserFromHeaders(HttpHeaders headers) {
-        String authHeader = headers.getFirst(HttpHeaders.AUTHORIZATION);
-        String token;
-        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-            throw new UnauthorizedException("Unauthorized");
-        } else {
-            token = authHeader.substring(7);
-        }
-        String username = jwtService.extractUserName(token);
-        return userRepository.findByUserName(username).orElseThrow(() -> new NotFoundException("User not found"));
     }
 
     private boolean isUserTheAuthorOfPost(User user, Post post) {

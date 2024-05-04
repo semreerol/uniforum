@@ -11,6 +11,7 @@ import com.bunyaminkalkan.api.repos.PostRepository;
 import com.bunyaminkalkan.api.requests.CommentCreateRequest;
 import com.bunyaminkalkan.api.requests.CommentUpdateRequest;
 import com.bunyaminkalkan.api.responses.CommentResponse;
+import com.bunyaminkalkan.api.security.JwtService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpHeaders;
 import org.springframework.stereotype.Service;
@@ -26,7 +27,7 @@ public class CommentService {
 
     private final CommentRepository commentRepository;
     private final PostRepository postRepository;
-    private final PostService postService;
+    private final JwtService jwtService;
 
 
     public List<CommentResponse> getAllComments(Optional<Long> postId) {
@@ -40,7 +41,7 @@ public class CommentService {
     }
 
     public CommentResponse createOneComment(HttpHeaders headers, CommentCreateRequest commentCreateRequest) {
-        User user = postService.getUserFromHeaders(headers);
+        User user = jwtService.getUserFromHeaders(headers);
         Post post = postRepository.findById(commentCreateRequest.getPostId()).orElseThrow(() -> new NotFoundException("Post not found"));
         Comment toSave = new Comment();
         toSave.setUser(user);
@@ -58,7 +59,7 @@ public class CommentService {
     }
 
     public CommentResponse updateOneComment(HttpHeaders headers, Long commentId, CommentUpdateRequest commentUpdateRequest) {
-        User user = postService.getUserFromHeaders(headers);
+        User user = jwtService.getUserFromHeaders(headers);
         Long userId = user.getId();
         Comment updatedComment = updateCommentBasedOnUserPermissions(commentId, userId, commentUpdateRequest);
         commentRepository.save(updatedComment);
@@ -66,7 +67,7 @@ public class CommentService {
     }
 
     public void deleteOneComment(HttpHeaders headers, Long commentId) {
-        User user = postService.getUserFromHeaders(headers);
+        User user = jwtService.getUserFromHeaders(headers);
         Comment comment = commentRepository.findById(commentId).orElseThrow(() -> new NotFoundException("Comment not found"));
         if (!isUserTheAuthorOfComment(user, comment)) {
             throw new ForbiddenException("You are not authorized to delete this comment");

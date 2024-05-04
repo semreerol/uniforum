@@ -1,11 +1,17 @@
 package com.bunyaminkalkan.api.security;
 
+import com.bunyaminkalkan.api.entities.User;
+import com.bunyaminkalkan.api.exceptions.NotFoundException;
+import com.bunyaminkalkan.api.exceptions.UnauthorizedException;
+import com.bunyaminkalkan.api.repos.UserRepository;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpHeaders;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 
@@ -16,7 +22,10 @@ import java.util.Map;
 import java.util.function.Function;
 
 @Service
+@RequiredArgsConstructor
 public class JwtService {
+
+    private final UserRepository userRepository;
 
     @Value("${app.secret}")
     private String SECRET_KEY;
@@ -70,5 +79,17 @@ public class JwtService {
     private Key getSignInKey() {
         byte[] keyBytes = Decoders.BASE64.decode(SECRET_KEY);
         return Keys.hmacShaKeyFor(keyBytes);
+    }
+
+    public User getUserFromHeaders(HttpHeaders headers) {
+        String authHeader = headers.getFirst(HttpHeaders.AUTHORIZATION);
+        String token;
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            throw new UnauthorizedException("Unauthorized");
+        } else {
+            token = authHeader.substring(7);
+        }
+        String username = extractUserName(token);
+        return userRepository.findByUserName(username).orElseThrow(() -> new NotFoundException("User not found"));
     }
 }
