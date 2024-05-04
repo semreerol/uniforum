@@ -9,14 +9,16 @@ public class PostResponse {
     Long id;
     Long userId;
     String text;
-    Integer likeCount;
-    Integer dislikeCount;
+    Integer likes;
+    Integer dislikes;
+    Boolean liked = false;
+    Boolean disliked = false;
 
     public PostResponse(Post entity) {
         this.id = entity.getId();
         this.userId = entity.getUser().getId();
         this.text = entity.getText();
-        this.likeCount = entity.getLikeCount();
-        this.dislikeCount = entity.getDislikeCount();
+        this.likes = entity.getLikedUsers().size();
+        this.dislikes = entity.getDislikedUsers().size();
     }
 }

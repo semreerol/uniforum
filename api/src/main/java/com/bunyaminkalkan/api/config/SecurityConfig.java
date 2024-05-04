@@ -32,18 +32,24 @@ public class SecurityConfig{
                 .authorizeHttpRequests((authorizeHttpRequests) ->
                         authorizeHttpRequests
                                 .requestMatchers("/auth/**").permitAll()
-                                .requestMatchers("/users/**").permitAll()
+                                .requestMatchers(HttpMethod.GET, "/users").permitAll()
+                                .requestMatchers(HttpMethod.POST, "/users").authenticated()
+                                .requestMatchers(HttpMethod.GET, "/users/{id}").permitAll()
+                                .requestMatchers(HttpMethod.PUT, "/users/{id}").authenticated()
+                                .requestMatchers(HttpMethod.DELETE, "/users/{id}").authenticated()
                                 .requestMatchers(HttpMethod.GET, "/posts").permitAll()
                                 .requestMatchers(HttpMethod.POST, "/posts").authenticated()
                                 .requestMatchers(HttpMethod.GET, "/posts/{postId}").permitAll()
                                 .requestMatchers(HttpMethod.PUT, "/posts/{postId}").authenticated()
                                 .requestMatchers(HttpMethod.DELETE, "/posts/{postId}").authenticated()
+                                .requestMatchers(HttpMethod.POST, "/posts/{postId}/**").authenticated()
                                 .requestMatchers(HttpMethod.GET, "/comments").permitAll()
                                 .requestMatchers(HttpMethod.POST, "/comments").authenticated()
                                 .requestMatchers(HttpMethod.GET, "/comments/{commentId}").permitAll()
                                 .requestMatchers(HttpMethod.PUT, "/comments/{commentId}").authenticated()
                                 .requestMatchers(HttpMethod.DELETE, "/comments/{commentId}").authenticated()
-                                .anyRequest().permitAll());
+                                .requestMatchers(HttpMethod.POST, "/comments/{commentId}/**").authenticated()
+                                .anyRequest().denyAll());
         return http.build();
     }
 
