@@ -3,6 +3,7 @@ package com.bunyaminkalkan.api.requests;
 import com.bunyaminkalkan.api.annotations.UniqueUserName;
 import jakarta.validation.constraints.Email;
 import lombok.Data;
+import org.springframework.web.multipart.MultipartFile;
 
 @Data
 public class UserUpdateRequest {
@@ -14,5 +15,5 @@ public class UserUpdateRequest {
     private String email;
     private String firstName;
     private String lastName;
-    private String profilePhoto;
+    private MultipartFile profilePhoto;
 }

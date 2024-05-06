@@ -12,8 +12,16 @@ import com.bunyaminkalkan.api.security.JwtService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpHeaders;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.util.List;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Service
@@ -35,18 +43,34 @@ public class UserService {
 
     public UserResponse updateOneUser(HttpHeaders headers, Long userId, UserUpdateRequest userUpdateRequest) {
         User user = userRepository.findById(userId).orElseThrow(() -> new NotFoundException("User not found"));
+        String uploadDirectory = "src/main/resources/static/images/profiles";
         if (!isOwnData(headers, user)) {
             throw new ForbiddenException("You don't have permission to update this user");
         }
-
         updateUser(user, userUpdateRequest);
-
+        UserResponse userResponse = new UserResponse(user);
+        MultipartFile profilePhoto = userUpdateRequest.getProfilePhoto();
+        if (profilePhoto != null && !profilePhoto.isEmpty()) {
+            String uniqueFileName = UUID.randomUUID().toString() + "_" + profilePhoto.getOriginalFilename() + ".png";
+            try {
+                Path uploadPath = Paths.get("src/main/resources/static/images/profiles");
+                if (!Files.exists(uploadPath)) {
+                    Files.createDirectories(uploadPath);
+                }
+                Path destinationPath = uploadPath.resolve(uniqueFileName);
+                Files.copy(profilePhoto.getInputStream(), destinationPath, StandardCopyOption.REPLACE_EXISTING);
+                user.setProfilePhoto("/images/profiles/" + uniqueFileName);
+                userResponse.setProfilePhoto("/images/profiles/" + uniqueFileName);
+            } catch (IOException e) {
+                throw new BadRequestException("Could not update profile photo");
+            }
+        }
         try {
             userRepository.save(user);
-            return new UserResponse(user);
         } catch (Exception e) {
             throw new BadRequestException("Could not update user");
         }
+        return userResponse;
     }
 
     public void deleteOneUser(HttpHeaders headers, Long userId) {
@@ -76,9 +100,9 @@ public class UserService {
         if (userUpdateRequest.getPassword() != null) {
             user.setPassword(userUpdateRequest.getPassword());
         }
-        if (userUpdateRequest.getProfilePhoto() != null) {
-            user.setProfilePhoto(userUpdateRequest.getProfilePhoto());
-        }
+//        if (userUpdateRequest.getProfilePhoto() != null) {
+//            user.setProfilePhoto(userUpdateRequest.getProfilePhoto());
+//        }
     }
 
     private boolean isOwnData(HttpHeaders headers, User user) {

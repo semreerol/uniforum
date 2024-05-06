@@ -1,6 +1,5 @@
 package com.bunyaminkalkan.api.controllers;
 
-import com.bunyaminkalkan.api.entities.User;
 import com.bunyaminkalkan.api.requests.UserUpdateRequest;
 import com.bunyaminkalkan.api.responses.UserResponse;
 import com.bunyaminkalkan.api.services.UserService;
@@ -33,7 +32,7 @@ public class UserController {
     }
 
     @PutMapping("/{userId}")
-    public UserResponse updateOneUser(@RequestHeader HttpHeaders headers, @PathVariable Long userId, @Valid @RequestBody UserUpdateRequest userUpdateRequest){
+    public UserResponse updateOneUser(@RequestHeader HttpHeaders headers, @PathVariable Long userId, @Valid @ModelAttribute UserUpdateRequest userUpdateRequest){
         return userService.updateOneUser(headers, userId, userUpdateRequest);
     }
 
