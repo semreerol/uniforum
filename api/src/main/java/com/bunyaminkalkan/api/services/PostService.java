@@ -32,9 +32,12 @@ public class PostService {
             list = postRepository.findAll();
         }
 
-        if (headers.containsKey("authorization")) {
+        if (headers.containsKey("Authorization")) {
             User user = jwtService.getUserFromHeaders(headers);
-            return list.stream().map(post -> setLikedOrDislikedState(user, post)).collect(Collectors.toList());
+            return list.stream().map(post -> {
+                PostResponse postResponse = new PostResponse(post);
+                return setPostLikedOrDislikedState(user, post, postResponse);
+            }).collect(Collectors.toList());
         }
         return list.stream().map(PostResponse::new).collect(Collectors.toList());
     }
@@ -49,11 +52,12 @@ public class PostService {
         return new PostResponse(toSave);
     }
 
-    public PostResponse getOnePostById(HttpHeaders headers, Long postId) {
+    public PostResponse getOnePost(HttpHeaders headers, Long postId) {
         Post post = postRepository.findById(postId).orElseThrow(() -> new NotFoundException("Post not found"));
-        if (headers.containsKey("authorization")) {
+        if (headers.containsKey("Authorization")) {
             User user = jwtService.getUserFromHeaders(headers);
-            return setLikedOrDislikedState(user, post);
+            PostResponse postResponse = new PostResponse(post);
+            return setPostLikedOrDislikedState(user, post, postResponse);
         }
         return new PostResponse(post);
     }
@@ -62,7 +66,7 @@ public class PostService {
         User user = jwtService.getUserFromHeaders(headers);
         Post post = postRepository.findById(postId).orElseThrow(() -> new NotFoundException("Post not found"));
         if (!isUserTheAuthorOfPost(user, post)) {
-            throw new ForbiddenException("You are not allowed to update this post");
+            throw new ForbiddenException("You are not authorized to update this post");
         }
         if (postUpdateRequest.getText() != null)
             post.setText(postUpdateRequest.getText());
@@ -87,59 +91,45 @@ public class PostService {
     public PostResponse likePost(HttpHeaders headers, Long postId) {
         User user = jwtService.getUserFromHeaders(headers);
         Post post = postRepository.findById(postId).orElseThrow(() -> new NotFoundException("Post not found"));
-        if (!post.getLikedUsers().contains(user) && !post.getDislikedUsers().contains(user)) {
-            likePostWithUser(post, user);
-        } else if (post.getDislikedUsers().contains(user)) {
-            unDislikePostWithUser(post, user);
-            likePostWithUser(post, user);
-        } else {
-            throw new BadRequestException("You are already like this post");
-        }
-        postRepository.save(post);
         PostResponse postResponse = new PostResponse(post);
         postResponse.setLiked(true);
-        return postResponse;
-    }
-
-    public PostResponse unLikePost(HttpHeaders headers, Long postId) {
-        User user = jwtService.getUserFromHeaders(headers);
-        Post post = postRepository.findById(postId).orElseThrow(() -> new NotFoundException("Post not found"));
-        if (post.getLikedUsers().contains(user)) {
+        if (!post.getLikedUsers().contains(user) && !post.getDislikedUsers().contains(user)) {
+            likePostWithUser(post, user);
+            postResponse.setLikes(postResponse.getLikes() + 1);
+        } else if (post.getLikedUsers().contains(user)) {
             unLikePostWithUser(post, user);
+            postResponse.setLikes(postResponse.getLikes() - 1);
+            postResponse.setLiked(false);
         } else {
-            throw new BadRequestException("You don't like yet this post");
+            unDislikePostWithUser(post, user);
+            likePostWithUser(post, user);
+            postResponse.setLikes(postResponse.getLikes() + 1);
+            postResponse.setDislikes(postResponse.getDislikes() - 1);
         }
         postRepository.save(post);
-        return new PostResponse(post);
+        return postResponse;
     }
 
     public PostResponse dislikePost(HttpHeaders headers, Long postId) {
         User user = jwtService.getUserFromHeaders(headers);
         Post post = postRepository.findById(postId).orElseThrow(() -> new NotFoundException("Post not found"));
-        if (!post.getDislikedUsers().contains(user) && !post.getLikedUsers().contains(user)) {
-            dislikePostWithUser(post, user);
-        } else if (post.getLikedUsers().contains(user)) {
-            unLikePostWithUser(post, user);
-            dislikePostWithUser(post, user);
-        } else {
-            throw new BadRequestException("You are already dislike this post");
-        }
-        postRepository.save(post);
         PostResponse postResponse = new PostResponse(post);
         postResponse.setDisliked(true);
-        return postResponse;
-    }
-
-    public PostResponse unDislikePost(HttpHeaders headers, Long postId) {
-        User user = jwtService.getUserFromHeaders(headers);
-        Post post = postRepository.findById(postId).orElseThrow(() -> new NotFoundException("Post not found"));
-        if (post.getDislikedUsers().contains(user)) {
+        if (!post.getDislikedUsers().contains(user) && !post.getLikedUsers().contains(user)) {
+            dislikePostWithUser(post, user);
+            postResponse.setDislikes(postResponse.getDislikes() + 1);
+        } else if (post.getDislikedUsers().contains(user)) {
             unDislikePostWithUser(post, user);
+            postResponse.setDislikes(postResponse.getDislikes() - 1);
+            postResponse.setDisliked(false);
         } else {
-            throw new BadRequestException("You don't dislike yet this post");
+            unLikePostWithUser(post, user);
+            dislikePostWithUser(post, user);
+            postResponse.setDislikes(postResponse.getDislikes() + 1);
+            postResponse.setLikes(postResponse.getLikes() - 1);
         }
         postRepository.save(post);
-        return new PostResponse(post);
+        return postResponse;
     }
 
     private boolean isUserTheAuthorOfPost(User user, Post post) {
@@ -172,8 +162,7 @@ public class PostService {
         post.setDislikedUsers(dislikedUsers);
     }
 
-    private PostResponse setLikedOrDislikedState(User user, Post post){
-        PostResponse postResponse = new PostResponse(post);
+    private PostResponse setPostLikedOrDislikedState(User user, Post post, PostResponse postResponse){
         if (post.getLikedUsers().contains(user)) {
             postResponse.setLiked(true);
         } else if (post.getDislikedUsers().contains(user)) {

@@ -35,8 +35,8 @@ public class PostController {
     }
 
     @GetMapping("/{postId}")
-    public PostResponse getOnePostById(@RequestHeader HttpHeaders headers, @PathVariable Long postId){
-        return postService.getOnePostById(headers, postId);
+    public PostResponse getOnePost(@RequestHeader HttpHeaders headers, @PathVariable Long postId){
+        return postService.getOnePost(headers, postId);
     }
 
     @PutMapping("/{postId}")
@@ -55,18 +55,8 @@ public class PostController {
         return postService.likePost(headers, postId);
     }
 
-    @PostMapping("/{postId}/unLike")
-    public PostResponse unLikePost(@RequestHeader HttpHeaders headers, @PathVariable Long postId){
-        return postService.unLikePost(headers, postId);
-    }
-
     @PostMapping("/{postId}/dislike")
     public PostResponse dislikePost(@RequestHeader HttpHeaders headers, @PathVariable Long postId){
         return postService.dislikePost(headers, postId);
-    }
-
-    @PostMapping("/{postId}/unDislike")
-    public PostResponse unDislikePost(@RequestHeader HttpHeaders headers, @PathVariable Long postId){
-        return postService.unDislikePost(headers, postId);
     }
 }
