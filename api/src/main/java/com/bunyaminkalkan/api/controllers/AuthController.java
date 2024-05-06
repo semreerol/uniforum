@@ -5,6 +5,7 @@ import com.bunyaminkalkan.api.requests.RegisterRequest;
 import com.bunyaminkalkan.api.requests.LoginRequest;
 import com.bunyaminkalkan.api.responses.AuthResponse;
 import com.bunyaminkalkan.api.services.AuthService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -20,12 +21,12 @@ public class AuthController {
     private final AuthService authService;
 
     @PostMapping("/login")
-    public ResponseEntity<AuthResponse> login(@RequestBody LoginRequest loginRequest){
+    public ResponseEntity<AuthResponse> login(@Valid @RequestBody LoginRequest loginRequest){
         return ResponseEntity.ok(authService.login(loginRequest));
     }
 
     @PostMapping("/register")
-    public ResponseEntity<AuthResponse> register(@RequestBody RegisterRequest registerRequest){
+    public ResponseEntity<AuthResponse> register(@Valid @RequestBody RegisterRequest registerRequest){
         return ResponseEntity.ok(authService.register(registerRequest));
     }
 

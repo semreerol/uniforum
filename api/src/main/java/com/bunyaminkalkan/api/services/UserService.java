@@ -27,20 +27,7 @@ public class UserService {
         return list.stream().map(UserResponse::new).collect(Collectors.toList());
     }
 
-    public UserResponse createOneUser(User newUser) {
-        User foundUser = userRepository.findByUserName(newUser.getUsername()).orElse(null);
-        if (foundUser != null) {
-            throw new BadRequestException("Username already exists");
-        }
-        try {
-            User user = userRepository.save(newUser);
-            return new UserResponse(user);
-        } catch (Exception e) {
-            throw new BadRequestException("Could not create user");
-        }
-    }
-
-    public UserResponse getOneUserByID(Long userId) {
+    public UserResponse getOneUser(Long userId) {
         User user = userRepository.findById(userId).orElseThrow(() -> new NotFoundException("User not found"));
         return new UserResponse(user);
     }
