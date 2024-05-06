@@ -6,6 +6,7 @@ import com.bunyaminkalkan.api.exceptions.ForbiddenException;
 import com.bunyaminkalkan.api.exceptions.NotFoundException;
 import com.bunyaminkalkan.api.exceptions.UnauthorizedException;
 import com.bunyaminkalkan.api.repos.UserRepository;
+import com.bunyaminkalkan.api.requests.UserUpdateRequest;
 import com.bunyaminkalkan.api.responses.UserResponse;
 import com.bunyaminkalkan.api.security.JwtService;
 import lombok.RequiredArgsConstructor;
@@ -32,15 +33,13 @@ public class UserService {
         return new UserResponse(user);
     }
 
-    public UserResponse updateOneUser(HttpHeaders headers, Long userId, User newUser) {
+    public UserResponse updateOneUser(HttpHeaders headers, Long userId, UserUpdateRequest userUpdateRequest) {
         User user = userRepository.findById(userId).orElseThrow(() -> new NotFoundException("User not found"));
-        boolean isOwn = isOwnData(headers, user);
-
-        if (!isOwn) {
+        if (!isOwnData(headers, user)) {
             throw new ForbiddenException("You don't have permission to update this user");
         }
 
-        updateUser(user, newUser);
+        updateUser(user, userUpdateRequest);
 
         try {
             userRepository.save(user);
@@ -60,31 +59,25 @@ public class UserService {
         }
     }
 
-    public User getOneUserByUserName(String userName) {
-        return userRepository.findByUserName(userName).orElseThrow(() -> new NotFoundException("User not found"));
-    }
+    private void updateUser(User user, UserUpdateRequest userUpdateRequest) {
 
-    private void updateUser(User user, User newUser) {
-        if (!isValidUserData(newUser)) {
-            throw new BadRequestException("Invalid user data");
+        if (userUpdateRequest.getUserName() != null) {
+            user.setUserName(userUpdateRequest.getUserName());
         }
-        if (newUser.getUsername() != null) {
-            user.setUserName(newUser.getUsername());
+        if (userUpdateRequest.getEmail() != null) {
+            user.setEmail(userUpdateRequest.getEmail());
         }
-        if (newUser.getEmail() != null) {
-            user.setEmail(newUser.getEmail());
+        if (userUpdateRequest.getFirstName() != null) {
+            user.setFirstName(userUpdateRequest.getFirstName());
         }
-        if (newUser.getFirstName() != null) {
-            user.setFirstName(newUser.getFirstName());
+        if (userUpdateRequest.getLastName() != null) {
+            user.setLastName(userUpdateRequest.getLastName());
         }
-        if (newUser.getLastName() != null) {
-            user.setLastName(newUser.getLastName());
+        if (userUpdateRequest.getPassword() != null) {
+            user.setPassword(userUpdateRequest.getPassword());
         }
-        if (newUser.getPassword() != null) {
-            user.setPassword(newUser.getPassword());
-        }
-        if (newUser.getProfilePhoto() != null) {
-            user.setProfilePhoto(newUser.getProfilePhoto());
+        if (userUpdateRequest.getProfilePhoto() != null) {
+            user.setProfilePhoto(userUpdateRequest.getProfilePhoto());
         }
     }
 
@@ -96,15 +89,6 @@ public class UserService {
         } else {
             throw new UnauthorizedException("Unauthorized");
         }
-    }
-
-    private boolean isValidUserData(User user) {
-        return !(user.getUsername() == null)
-                || !(user.getEmail() == null)
-                || !(user.getFirstName() == null)
-                || !(user.getLastName() == null)
-                || !(user.getPassword() == null)
-                || !(user.getProfilePhoto() == null);
     }
 
 }
