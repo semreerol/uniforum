@@ -1,8 +1,9 @@
 package com.bunyaminkalkan.api.controllers;
 
-import com.bunyaminkalkan.api.entities.User;
+import com.bunyaminkalkan.api.requests.UserUpdateRequest;
 import com.bunyaminkalkan.api.responses.UserResponse;
 import com.bunyaminkalkan.api.services.UserService;
+import jakarta.validation.Valid;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -25,19 +26,14 @@ public class UserController {
         return userService.getAllUsers();
     }
 
-    @PostMapping
-    public UserResponse createOneUser(@RequestBody User newUser){
-        return userService.createOneUser(newUser);
-    }
-
     @GetMapping("/{userId}")
     public UserResponse getOneUser(@PathVariable Long userId){
-        return userService.getOneUserByID(userId);
+        return userService.getOneUser(userId);
     }
 
     @PutMapping("/{userId}")
-    public UserResponse updateOneUser(@RequestHeader HttpHeaders headers, @PathVariable Long userId, @RequestBody User newUser){
-        return userService.updateOneUser(headers, userId, newUser);
+    public UserResponse updateOneUser(@RequestHeader HttpHeaders headers, @PathVariable Long userId, @Valid @ModelAttribute UserUpdateRequest userUpdateRequest){
+        return userService.updateOneUser(headers, userId, userUpdateRequest);
     }
 
     @DeleteMapping("/{userId}")

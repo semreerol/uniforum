@@ -6,13 +6,22 @@ import com.bunyaminkalkan.api.exceptions.ForbiddenException;
 import com.bunyaminkalkan.api.exceptions.NotFoundException;
 import com.bunyaminkalkan.api.exceptions.UnauthorizedException;
 import com.bunyaminkalkan.api.repos.UserRepository;
+import com.bunyaminkalkan.api.requests.UserUpdateRequest;
 import com.bunyaminkalkan.api.responses.UserResponse;
 import com.bunyaminkalkan.api.security.JwtService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpHeaders;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.util.List;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Service
@@ -27,40 +36,41 @@ public class UserService {
         return list.stream().map(UserResponse::new).collect(Collectors.toList());
     }
 
-    public UserResponse createOneUser(User newUser) {
-        User foundUser = userRepository.findByUserName(newUser.getUsername()).orElse(null);
-        if (foundUser != null) {
-            throw new BadRequestException("Username already exists");
-        }
-        try {
-            User user = userRepository.save(newUser);
-            return new UserResponse(user);
-        } catch (Exception e) {
-            throw new BadRequestException("Could not create user");
-        }
-    }
-
-    public UserResponse getOneUserByID(Long userId) {
+    public UserResponse getOneUser(Long userId) {
         User user = userRepository.findById(userId).orElseThrow(() -> new NotFoundException("User not found"));
         return new UserResponse(user);
     }
 
-    public UserResponse updateOneUser(HttpHeaders headers, Long userId, User newUser) {
+    public UserResponse updateOneUser(HttpHeaders headers, Long userId, UserUpdateRequest userUpdateRequest) {
         User user = userRepository.findById(userId).orElseThrow(() -> new NotFoundException("User not found"));
-        boolean isOwn = isOwnData(headers, user);
-
-        if (!isOwn) {
+        String uploadDirectory = "src/main/resources/static/images/profiles";
+        if (!isOwnData(headers, user)) {
             throw new ForbiddenException("You don't have permission to update this user");
         }
-
-        updateUser(user, newUser);
-
+        updateUser(user, userUpdateRequest);
+        UserResponse userResponse = new UserResponse(user);
+        MultipartFile profilePhoto = userUpdateRequest.getProfilePhoto();
+        if (profilePhoto != null && !profilePhoto.isEmpty()) {
+            String uniqueFileName = UUID.randomUUID().toString() + "_" + profilePhoto.getOriginalFilename() + ".png";
+            try {
+                Path uploadPath = Paths.get("src/main/resources/static/images/profiles");
+                if (!Files.exists(uploadPath)) {
+                    Files.createDirectories(uploadPath);
+                }
+                Path destinationPath = uploadPath.resolve(uniqueFileName);
+                Files.copy(profilePhoto.getInputStream(), destinationPath, StandardCopyOption.REPLACE_EXISTING);
+                user.setProfilePhoto("/images/profiles/" + uniqueFileName);
+                userResponse.setProfilePhoto("/images/profiles/" + uniqueFileName);
+            } catch (IOException e) {
+                throw new BadRequestException("Could not update profile photo");
+            }
+        }
         try {
             userRepository.save(user);
-            return new UserResponse(user);
         } catch (Exception e) {
             throw new BadRequestException("Could not update user");
         }
+        return userResponse;
     }
 
     public void deleteOneUser(HttpHeaders headers, Long userId) {
@@ -73,32 +83,26 @@ public class UserService {
         }
     }
 
-    public User getOneUserByUserName(String userName) {
-        return userRepository.findByUserName(userName).orElseThrow(() -> new NotFoundException("User not found"));
-    }
+    private void updateUser(User user, UserUpdateRequest userUpdateRequest) {
 
-    private void updateUser(User user, User newUser) {
-        if (!isValidUserData(newUser)) {
-            throw new BadRequestException("Invalid user data");
+        if (userUpdateRequest.getUserName() != null) {
+            user.setUserName(userUpdateRequest.getUserName());
         }
-        if (newUser.getUsername() != null) {
-            user.setUserName(newUser.getUsername());
+        if (userUpdateRequest.getEmail() != null) {
+            user.setEmail(userUpdateRequest.getEmail());
         }
-        if (newUser.getEmail() != null) {
-            user.setEmail(newUser.getEmail());
+        if (userUpdateRequest.getFirstName() != null) {
+            user.setFirstName(userUpdateRequest.getFirstName());
         }
-        if (newUser.getFirstName() != null) {
-            user.setFirstName(newUser.getFirstName());
+        if (userUpdateRequest.getLastName() != null) {
+            user.setLastName(userUpdateRequest.getLastName());
         }
-        if (newUser.getLastName() != null) {
-            user.setLastName(newUser.getLastName());
+        if (userUpdateRequest.getPassword() != null) {
+            user.setPassword(userUpdateRequest.getPassword());
         }
-        if (newUser.getPassword() != null) {
-            user.setPassword(newUser.getPassword());
-        }
-        if (newUser.getProfilePhoto() != null) {
-            user.setProfilePhoto(newUser.getProfilePhoto());
-        }
+//        if (userUpdateRequest.getProfilePhoto() != null) {
+//            user.setProfilePhoto(userUpdateRequest.getProfilePhoto());
+//        }
     }
 
     private boolean isOwnData(HttpHeaders headers, User user) {
@@ -109,15 +113,6 @@ public class UserService {
         } else {
             throw new UnauthorizedException("Unauthorized");
         }
-    }
-
-    private boolean isValidUserData(User user) {
-        return !(user.getUsername() == null)
-                || !(user.getEmail() == null)
-                || !(user.getFirstName() == null)
-                || !(user.getLastName() == null)
-                || !(user.getPassword() == null)
-                || !(user.getProfilePhoto() == null);
     }
 
 }

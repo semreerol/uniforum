@@ -1,8 +1,8 @@
 package com.bunyaminkalkan.api.exceptions;
 
+import org.springframework.context.support.DefaultMessageSourceResolvable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 
@@ -33,10 +33,21 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(createExceptionResponse(e.getMessage()), HttpStatus.NOT_FOUND);
     }
 
+    @ExceptionHandler(org.springframework.web.bind.MethodArgumentNotValidException.class)
+    private ResponseEntity<Object> handleValidationException(org.springframework.web.bind.MethodArgumentNotValidException e){
+        String errorMessage = e.getBindingResult().getFieldErrors().stream()
+                .map(DefaultMessageSourceResolvable::getDefaultMessage)
+                .findFirst()
+                .orElse("Validation error occurred.");
+        return new ResponseEntity<>(createExceptionResponse(errorMessage), HttpStatus.BAD_REQUEST);
+    }
+
     private Object createExceptionResponse(String message) {
         return new ExceptionResponse(
                 message,
                 ZonedDateTime.now(ZoneId.of("Europe/Istanbul"))
         );
     }
+
+
 }
