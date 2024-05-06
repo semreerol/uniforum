@@ -6,6 +6,4 @@ import lombok.Data;
 public class CommentUpdateRequest {
 
     String text;
-    Integer likeCount;
-    Integer dislikeCount;
 }

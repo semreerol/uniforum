@@ -11,6 +11,7 @@ import com.bunyaminkalkan.api.repos.PostRepository;
 import com.bunyaminkalkan.api.requests.CommentCreateRequest;
 import com.bunyaminkalkan.api.requests.CommentUpdateRequest;
 import com.bunyaminkalkan.api.responses.CommentResponse;
+import com.bunyaminkalkan.api.security.JwtService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpHeaders;
 import org.springframework.stereotype.Service;
@@ -18,6 +19,7 @@ import org.springframework.stereotype.Service;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
@@ -26,21 +28,29 @@ public class CommentService {
 
     private final CommentRepository commentRepository;
     private final PostRepository postRepository;
-    private final PostService postService;
+    private final JwtService jwtService;
 
 
-    public List<CommentResponse> getAllComments(Optional<Long> postId) {
+    public List<CommentResponse> getAllComments(HttpHeaders headers, Optional<Long> userId) {
         List<Comment> list;
-        if (postId.isPresent()) {
-            list = commentRepository.findAllByPostId(postId.get());
+        if (userId.isPresent()) {
+            list = commentRepository.findAllByPostId(userId.get());
         } else {
             list = commentRepository.findAll();
+        }
+
+        if (headers.containsKey("Authorization")) {
+            User user = jwtService.getUserFromHeaders(headers);
+            return list.stream().map(comment -> {
+                CommentResponse commentResponse = new CommentResponse(comment);
+                return setCommentLikedOrDislikedState(user, comment, commentResponse);
+            }).collect(Collectors.toList());
         }
         return list.stream().map(CommentResponse::new).collect(Collectors.toList());
     }
 
     public CommentResponse createOneComment(HttpHeaders headers, CommentCreateRequest commentCreateRequest) {
-        User user = postService.getUserFromHeaders(headers);
+        User user = jwtService.getUserFromHeaders(headers);
         Post post = postRepository.findById(commentCreateRequest.getPostId()).orElseThrow(() -> new NotFoundException("Post not found"));
         Comment toSave = new Comment();
         toSave.setUser(user);
@@ -51,24 +61,34 @@ public class CommentService {
         return new CommentResponse(toSave);
     }
 
-    public CommentResponse getOneComment(Long commentId) {
+    public CommentResponse getOneComment(HttpHeaders headers, Long commentId) {
         Comment comment = commentRepository.findById(commentId).orElseThrow(() -> new NotFoundException("Comment not found"));
-        if (comment == null) return null;
-        return new CommentResponse(comment);
+        CommentResponse commentResponse = new CommentResponse(comment);
+        if (headers.containsKey("Authorization")) {
+            User user = jwtService.getUserFromHeaders(headers);
+            return setCommentLikedOrDislikedState(user, comment, commentResponse);
+        }
+        return commentResponse;
     }
 
     public CommentResponse updateOneComment(HttpHeaders headers, Long commentId, CommentUpdateRequest commentUpdateRequest) {
-        User user = postService.getUserFromHeaders(headers);
-        Long userId = user.getId();
-        Comment updatedComment = updateCommentBasedOnUserPermissions(commentId, userId, commentUpdateRequest);
-        commentRepository.save(updatedComment);
-        return new CommentResponse(updatedComment);
+        User user = jwtService.getUserFromHeaders(headers);
+        Comment comment = commentRepository.findById(commentId).orElseThrow(() -> new NotFoundException("Comment not found"));
+        if (isUserTheAuthorOfComment(user, comment)) {
+            throw new ForbiddenException("You are not authorized to update this comment");
+        }
+        if (commentUpdateRequest.getText() != null) {
+            comment.setText(commentUpdateRequest.getText());
+        }
+        commentRepository.save(comment);
+        return new CommentResponse(comment);
+
     }
 
     public void deleteOneComment(HttpHeaders headers, Long commentId) {
-        User user = postService.getUserFromHeaders(headers);
+        User user = jwtService.getUserFromHeaders(headers);
         Comment comment = commentRepository.findById(commentId).orElseThrow(() -> new NotFoundException("Comment not found"));
-        if (!isUserTheAuthorOfComment(user, comment)) {
+        if (isUserTheAuthorOfComment(user, comment)) {
             throw new ForbiddenException("You are not authorized to delete this comment");
         }
         try {
@@ -76,39 +96,89 @@ public class CommentService {
         } catch (Exception e) {
             throw new BadRequestException("Comment not deleted");
         }
-
         commentRepository.deleteById(commentId);
     }
 
-    private Comment updateCommentBasedOnUserPermissions(Long commentId, Long userId, CommentUpdateRequest commentUpdateRequest) {
+    public CommentResponse likeComment(HttpHeaders headers, Long commentId) {
+        User user = jwtService.getUserFromHeaders(headers);
         Comment comment = commentRepository.findById(commentId).orElseThrow(() -> new NotFoundException("Comment not found"));
-        Long commentUserId = comment.getUser().getId();
-        if (commentUserId.equals(userId)) {
-            if (commentUpdateRequest.getLikeCount() != null) {
-                comment.setLikeCount(commentUpdateRequest.getLikeCount());
-            }
-            if (commentUpdateRequest.getDislikeCount() != null) {
-                comment.setDislikeCount(commentUpdateRequest.getDislikeCount());
-            }
-            if (commentUpdateRequest.getText() != null) {
-                comment.setText(commentUpdateRequest.getText());
-            }
-            return comment;
+        CommentResponse commentResponse = new CommentResponse(comment);
+        commentResponse.setLiked(true);
+        if (!comment.getLikedUsers().contains(user) && !comment.getDislikedUsers().contains(user)) {
+            likeCommentWithUser(comment, user);
+            commentResponse.setLikes(commentResponse.getLikes() + 1);
+        } else if (comment.getLikedUsers().contains(user)) {
+            unLikeCommentWithUser(comment, user);
+            commentResponse.setLikes(commentResponse.getLikes() - 1);
+            commentResponse.setLiked(false);
         } else {
-            if (commentUpdateRequest.getLikeCount() != null) {
-                comment.setLikeCount(commentUpdateRequest.getLikeCount());
-            }
-            if (commentUpdateRequest.getDislikeCount() != null) {
-                comment.setDislikeCount(commentUpdateRequest.getDislikeCount());
-            }
-            return comment;
+            unDislikeCommentWithUser(comment, user);
+            likeCommentWithUser(comment, user);
+            commentResponse.setLikes(commentResponse.getLikes() + 1);
+            commentResponse.setDislikes(commentResponse.getDislikes() - 1);
         }
+        commentRepository.save(comment);
+        return commentResponse;
+    }
+
+    public CommentResponse dislikeComment(HttpHeaders headers, Long commentId) {
+        User user = jwtService.getUserFromHeaders(headers);
+        Comment comment = commentRepository.findById(commentId).orElseThrow(() -> new NotFoundException("Comment not found"));
+        CommentResponse commentResponse = new CommentResponse(comment);
+        commentResponse.setDisliked(true);
+        if (!comment.getLikedUsers().contains(user) && !comment.getDislikedUsers().contains(user)) {
+            dislikeCommentWithUser(comment, user);
+            commentResponse.setDislikes(commentResponse.getDislikes() + 1);
+        } else if (comment.getDislikedUsers().contains(user)) {
+            unDislikeCommentWithUser(comment, user);
+            commentResponse.setDislikes(commentResponse.getDislikes() - 1);
+            commentResponse.setDisliked(false);
+        } else {
+            unLikeCommentWithUser(comment, user);
+            dislikeCommentWithUser(comment, user);
+            commentResponse.setDislikes(commentResponse.getDislikes() + 1);
+            commentResponse.setLikes(commentResponse.getLikes() - 1);
+        }
+        commentRepository.save(comment);
+        return commentResponse;
     }
 
     private boolean isUserTheAuthorOfComment(User user, Comment comment) {
         Long userId = user.getId();
         Long commentUserId = comment.getUser().getId();
-        return userId.equals(commentUserId);
+        return !userId.equals(commentUserId);
     }
 
+    private void likeCommentWithUser(Comment comment, User user) {
+        Set<User> likedUsers = comment.getLikedUsers();
+        likedUsers.add(user);
+        comment.setLikedUsers(likedUsers);
+    }
+
+    private void unLikeCommentWithUser(Comment comment, User user) {
+        Set<User> likedUsers = comment.getLikedUsers();
+        likedUsers.remove(user);
+        comment.setLikedUsers(likedUsers);
+    }
+
+    private void dislikeCommentWithUser(Comment comment, User user) {
+        Set<User> dislikedUsers = comment.getDislikedUsers();
+        dislikedUsers.add(user);
+        comment.setDislikedUsers(dislikedUsers);
+    }
+
+    private void unDislikeCommentWithUser(Comment comment, User user) {
+        Set<User> dislikedUsers = comment.getDislikedUsers();
+        dislikedUsers.remove(user);
+        comment.setDislikedUsers(dislikedUsers);
+    }
+
+    private CommentResponse setCommentLikedOrDislikedState(User user, Comment comment, CommentResponse commentResponse){
+        if (comment.getLikedUsers().contains(user)) {
+            commentResponse.setLiked(true);
+        } else if (comment.getDislikedUsers().contains(user)) {
+            commentResponse.setDisliked(true);
+        }
+        return commentResponse;
+    }
 }

@@ -3,6 +3,7 @@ package com.bunyaminkalkan.api.controllers;
 import com.bunyaminkalkan.api.requests.CommentCreateRequest;
 import com.bunyaminkalkan.api.requests.CommentUpdateRequest;
 import com.bunyaminkalkan.api.responses.CommentResponse;
+import com.bunyaminkalkan.api.responses.PostResponse;
 import com.bunyaminkalkan.api.services.CommentService;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -23,8 +24,8 @@ public class CommentController {
     }
 
     @GetMapping
-    public List<CommentResponse> getAllComments(@RequestParam Optional<Long> postId){
-        return commentService.getAllComments(postId);
+    public List<CommentResponse> getAllComments(@RequestHeader HttpHeaders headers, @RequestParam Optional<Long> userId){
+        return commentService.getAllComments(headers, userId);
     }
 
     @PostMapping
@@ -33,8 +34,8 @@ public class CommentController {
     }
 
     @GetMapping("/{commentId}")
-    public CommentResponse getOneComment(@PathVariable Long commentId){
-        return commentService.getOneComment(commentId);
+    public CommentResponse getOneComment(@RequestHeader HttpHeaders headers, @PathVariable Long commentId){
+        return commentService.getOneComment(headers, commentId);
     }
 
     @PutMapping("/{commentId}")
@@ -47,4 +48,15 @@ public class CommentController {
         commentService.deleteOneComment(headers, commentId);
         return ResponseEntity.status(HttpStatus.ACCEPTED).build();
     }
+
+    @PostMapping("/{commentId}/like")
+    public CommentResponse likeComment(@RequestHeader HttpHeaders headers, @PathVariable Long commentId){
+        return commentService.likeComment(headers, commentId);
+    }
+
+    @PostMapping("/{commentId}/dislike")
+    public CommentResponse dislikeComment(@RequestHeader HttpHeaders headers, @PathVariable Long commentId){
+        return commentService.dislikeComment(headers, commentId);
+    }
+
 }

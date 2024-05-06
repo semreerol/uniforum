@@ -25,8 +25,8 @@ public class PostController {
 
     @GetMapping
     @Transactional
-    public List<PostResponse> getAllPosts(@RequestParam Optional<Long> userId){
-        return postService.getAllPost(userId);
+    public List<PostResponse> getAllPosts(@RequestHeader HttpHeaders headers, @RequestParam Optional<Long> userId){
+        return postService.getAllPost(headers, userId);
     }
 
     @PostMapping
@@ -35,8 +35,8 @@ public class PostController {
     }
 
     @GetMapping("/{postId}")
-    public PostResponse getOnePostById(@PathVariable Long postId){
-        return postService.getOnePostById(postId);
+    public PostResponse getOnePost(@RequestHeader HttpHeaders headers, @PathVariable Long postId){
+        return postService.getOnePost(headers, postId);
     }
 
     @PutMapping("/{postId}")
@@ -48,5 +48,15 @@ public class PostController {
     public ResponseEntity<?> deleteOnePost(@RequestHeader HttpHeaders headers, @PathVariable Long postId){
         postService.deleteOnePost(headers, postId);
         return ResponseEntity.status(HttpStatus.ACCEPTED).build();
+    }
+
+    @PostMapping("/{postId}/like")
+    public PostResponse likePost(@RequestHeader HttpHeaders headers, @PathVariable Long postId){
+        return postService.likePost(headers, postId);
+    }
+
+    @PostMapping("/{postId}/dislike")
+    public PostResponse dislikePost(@RequestHeader HttpHeaders headers, @PathVariable Long postId){
+        return postService.dislikePost(headers, postId);
     }
 }
