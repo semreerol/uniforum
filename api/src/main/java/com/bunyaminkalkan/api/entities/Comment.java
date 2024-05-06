@@ -6,6 +6,8 @@ import org.hibernate.annotations.OnDelete;
 import org.hibernate.annotations.OnDeleteAction;
 
 import java.util.Date;
+import java.util.HashSet;
+import java.util.Set;
 
 @Entity
 @Table(name = "comment_table")
@@ -33,6 +35,19 @@ public class Comment {
     @Temporal(TemporalType.TIMESTAMP)
     Date createDate;
 
-    Integer likeCount;
-    Integer dislikeCount;
+    @ManyToMany
+    @JoinTable(
+            name = "comment_liked_users",
+            joinColumns = @JoinColumn(name = "comment_id"),
+            inverseJoinColumns = @JoinColumn(name = "user_id")
+    )
+    Set<User> likedUsers = new HashSet<>();
+
+    @ManyToMany
+    @JoinTable(
+            name = "comment_disliked_users",
+            joinColumns = @JoinColumn(name = "comment_id"),
+            inverseJoinColumns = @JoinColumn(name = "user_id")
+    )
+    Set<User> dislikedUsers = new HashSet<>();
 }
