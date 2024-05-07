@@ -37,6 +37,8 @@ public class SecurityConfig{
                                 .requestMatchers(HttpMethod.GET, "/users/{id}").permitAll()
                                 .requestMatchers(HttpMethod.PUT, "/users/{id}").authenticated()
                                 .requestMatchers(HttpMethod.DELETE, "/users/{id}").authenticated()
+                                .requestMatchers(HttpMethod.GET, "/users/{id}/profilePhoto").permitAll()
+                                .requestMatchers(HttpMethod.DELETE, "/users/{id}/profilePhoto").authenticated()
                                 .requestMatchers(HttpMethod.GET, "/posts").permitAll()
                                 .requestMatchers(HttpMethod.POST, "/posts").authenticated()
                                 .requestMatchers(HttpMethod.GET, "/posts/{postId}").permitAll()
