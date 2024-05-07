@@ -6,6 +6,7 @@ import com.bunyaminkalkan.api.services.UserService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -39,6 +40,17 @@ public class UserController {
     @DeleteMapping("/{userId}")
     public ResponseEntity<?> deleteOneUser(@RequestHeader HttpHeaders headers, @PathVariable Long userId){
         userService.deleteOneUser(headers, userId);
+        return ResponseEntity.status(HttpStatus.ACCEPTED).build();
+    }
+
+    @GetMapping(value = "/{userId}/profilePhoto", produces = MediaType.IMAGE_PNG_VALUE)
+    public ResponseEntity<byte[]> getProfilePhoto(@PathVariable Long userId){
+        return userService.getProfilePhoto(userId);
+    }
+
+    @DeleteMapping("/{userId}/profilePhoto")
+    public ResponseEntity<?> deleteProfilePhoto(@RequestHeader HttpHeaders headers, @PathVariable Long userId){
+        userService.deleteProfilePhoto(headers, userId);
         return ResponseEntity.status(HttpStatus.ACCEPTED).build();
     }
 }
