@@ -18,5 +18,8 @@ public class RegisterRequest {
 
     @NotBlank(message = "Password cannot be blank.")
     private String password;
+
+    private Long universityId;
+    private Long departmentId;
 }
 

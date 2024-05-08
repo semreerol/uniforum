@@ -1,9 +1,9 @@
 package com.bunyaminkalkan.api.services;
 
-import com.bunyaminkalkan.api.entities.RefreshToken;
-import com.bunyaminkalkan.api.entities.Role;
-import com.bunyaminkalkan.api.entities.User;
+import com.bunyaminkalkan.api.entities.*;
 import com.bunyaminkalkan.api.exceptions.BadRequestException;
+import com.bunyaminkalkan.api.repos.DepartmentRepository;
+import com.bunyaminkalkan.api.repos.UniversityRepository;
 import com.bunyaminkalkan.api.repos.UserRepository;
 import com.bunyaminkalkan.api.requests.LoginRequest;
 import com.bunyaminkalkan.api.requests.RefreshRequest;
@@ -17,11 +17,16 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.util.HashSet;
+import java.util.Set;
+
 @Service
 @RequiredArgsConstructor
 public class AuthService {
 
     private final UserRepository userRepository;
+    private final UniversityRepository universityRepository;
+    private final DepartmentRepository departmentRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
     private final AuthenticationManager authenticationManager;
@@ -47,6 +52,8 @@ public class AuthService {
         user.setEmail(registerRequest.getEmail());
         user.setPassword(passwordEncoder.encode(registerRequest.getPassword()));
         user.setRole(Role.USER);
+        user.setUniversity(universityRepository.findById(registerRequest.getUniversityId()).orElse(null));
+        user.setDepartment(departmentRepository.findById(registerRequest.getDepartmentId()).orElse(null));
         userRepository.save(user);
         var jwtToken = jwtService.generateToken(user);
         var refreshToken = refreshTokenService.createRefreshToken(user);
