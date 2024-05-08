@@ -51,6 +51,8 @@ public class SecurityConfig{
                                 .requestMatchers(HttpMethod.PUT, "/comments/{commentId}").authenticated()
                                 .requestMatchers(HttpMethod.DELETE, "/comments/{commentId}").authenticated()
                                 .requestMatchers(HttpMethod.POST, "/comments/{commentId}/**").authenticated()
+                                .requestMatchers(HttpMethod.GET, "/universities").permitAll()
+                                .requestMatchers(HttpMethod.GET, "/departments").permitAll()
                                 .anyRequest().denyAll());
         return http.build();
     }
