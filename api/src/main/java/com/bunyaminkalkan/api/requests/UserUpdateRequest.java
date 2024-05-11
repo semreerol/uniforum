@@ -10,7 +10,9 @@ public class UserUpdateRequest {
 
     @UniqueUserName
     private String userName;
-    private String password;
+    private String currentPassword;
+    private String newPassword;
+    private String confirmNewPassword;
     @Email(message = "Please enter a valid email address.")
     private String email;
     private String firstName;
