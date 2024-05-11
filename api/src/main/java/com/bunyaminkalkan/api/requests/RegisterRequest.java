@@ -1,6 +1,7 @@
 package com.bunyaminkalkan.api.requests;
 
 import com.bunyaminkalkan.api.annotations.UniqueUserName;
+import com.bunyaminkalkan.api.annotations.ValidPassword;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
@@ -17,6 +18,7 @@ public class RegisterRequest {
     private String email;
 
     @NotBlank(message = "Password cannot be blank.")
+    @ValidPassword
     private String password;
 
     private Long universityId;

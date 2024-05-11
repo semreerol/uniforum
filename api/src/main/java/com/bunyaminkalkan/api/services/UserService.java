@@ -12,10 +12,10 @@ import com.bunyaminkalkan.api.security.JwtService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -31,6 +31,7 @@ public class UserService {
 
     private final UserRepository userRepository;
     private final JwtService jwtService;
+    private final PasswordEncoder passwordEncoder;
     private String uploadDirectory = "src/main/resources/static/images/profiles";
 
     public List<UserResponse> getAllUsers() {
@@ -48,11 +49,15 @@ public class UserService {
         if (!isOwnData(headers, user)) {
             throw new ForbiddenException("You don't have permission to update this user");
         }
-        updateUser(user, userUpdateRequest);
+        updateUserWithoutPassAndPhoto(user, userUpdateRequest);
+        if (checkPasswordsField(user, userUpdateRequest.getCurrentPassword(), userUpdateRequest.getNewPassword(), userUpdateRequest.getConfirmNewPassword())) {
+            String newPasswordEncoded = passwordEncoder.encode(userUpdateRequest.getNewPassword());
+            user.setPassword(newPasswordEncoded);
+        }
         UserResponse userResponse = new UserResponse(user);
         MultipartFile profilePhoto = userUpdateRequest.getProfilePhoto();
         if (profilePhoto != null && !profilePhoto.isEmpty()) {
-            String uniqueFileName = UUID.randomUUID().toString() + "_" + profilePhoto.getOriginalFilename().replaceFirst("[.][^.]+$", "") + ".png";
+            String uniqueFileName = UUID.randomUUID().toString() + "_" + profilePhoto.getOriginalFilename().replaceFirst("[.][^.]+$", ".png");
             try {
                 Path uploadPath = Paths.get(uploadDirectory);
                 if (!Files.exists(uploadPath)) {
@@ -122,7 +127,33 @@ public class UserService {
         }
     }
 
-    private void updateUser(User user, UserUpdateRequest userUpdateRequest) {
+    //Private
+
+    private boolean checkPasswordsField(User user, String currentPassword, String newPassword, String confirmNewPassword) {
+        if (currentPassword == null && newPassword == null && confirmNewPassword == null) {
+            return false;
+        } else if (currentPassword != null && newPassword != null && confirmNewPassword != null) {
+            String userPass = user.getPassword();
+            if (passwordEncoder.matches(currentPassword, userPass)) {
+                if (currentPassword.equals(newPassword)) {
+                    throw new BadRequestException("New password cannot be the same as old password.");
+                }
+                String newPassEncoded = passwordEncoder.encode(newPassword);
+                if (passwordEncoder.matches(confirmNewPassword, newPassEncoded)) {
+                    return true;
+                } else {
+                    throw new BadRequestException("New Password fields do not match");
+                }
+            } else {
+                throw new BadRequestException("Passwords do not match");
+            }
+
+        } else {
+            throw new BadRequestException("Fill all password fields");
+        }
+    }
+
+    private void updateUserWithoutPassAndPhoto(User user, UserUpdateRequest userUpdateRequest) {
 
         if (userUpdateRequest.getUserName() != null) {
             user.setUserName(userUpdateRequest.getUserName());
@@ -136,12 +167,6 @@ public class UserService {
         if (userUpdateRequest.getLastName() != null) {
             user.setLastName(userUpdateRequest.getLastName());
         }
-        if (userUpdateRequest.getPassword() != null) {
-            user.setPassword(userUpdateRequest.getPassword());
-        }
-//        if (userUpdateRequest.getProfilePhoto() != null) {
-//            user.setProfilePhoto(userUpdateRequest.getProfilePhoto());
-//        }
     }
 
     private boolean isOwnData(HttpHeaders headers, User user) {

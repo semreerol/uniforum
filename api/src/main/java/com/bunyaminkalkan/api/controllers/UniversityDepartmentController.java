@@ -5,6 +5,7 @@ import com.bunyaminkalkan.api.responses.UniversityResponse;
 import com.bunyaminkalkan.api.services.UniversityDepartmentService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -20,6 +21,11 @@ public class UniversityDepartmentController {
     @GetMapping("/universities")
     public List<UniversityResponse> getUniversities(){
         return universityDepartmentService.getUniversities();
+    }
+
+    @GetMapping("/universities/{uniId}")
+    public UniversityResponse getUniversityById(@PathVariable Long uniId){
+        return universityDepartmentService.getUniversityById(uniId);
     }
 
     @GetMapping("/departments")
