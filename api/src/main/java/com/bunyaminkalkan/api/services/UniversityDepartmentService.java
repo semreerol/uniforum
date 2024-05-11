@@ -1,6 +1,7 @@
 package com.bunyaminkalkan.api.services;
 
 import com.bunyaminkalkan.api.entities.Department;
+import com.bunyaminkalkan.api.exceptions.NotFoundException;
 import com.bunyaminkalkan.api.repos.DepartmentRepository;
 import com.bunyaminkalkan.api.repos.UniversityRepository;
 import com.bunyaminkalkan.api.responses.UniversityResponse;
@@ -25,5 +26,9 @@ public class UniversityDepartmentService {
 
     public List<Department> getDepartments() {
         return departmentRepository.findAll();
+    }
+
+    public UniversityResponse getUniversityById(Long uniId) {
+        return universityRepository.findById(uniId).map(UniversityResponse::new).orElseThrow(() -> new NotFoundException("University not found"));
     }
 }
