@@ -1,17 +1,22 @@
 package com.bunyaminkalkan.api.config;
 
+import com.bunyaminkalkan.api.security.CustomAuthenticationEntryPoint;
 import com.bunyaminkalkan.api.security.JwtAuthenticationFilter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationProvider;
+import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+import org.springframework.web.filter.CorsFilter;
 
 @Configuration
 @EnableWebSecurity
@@ -20,11 +25,12 @@ public class SecurityConfig{
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
     private final AuthenticationProvider authenticationProvider;
+    private final CustomAuthenticationEntryPoint customAuthenticationEntryPoint;
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-//                .cors(Customizer.withDefaults())
+                .cors(Customizer.withDefaults())
                 .csrf(AbstractHttpConfigurer::disable)
                 .sessionManagement((sessionManagement) -> sessionManagement.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authenticationProvider(authenticationProvider)
@@ -53,11 +59,15 @@ public class SecurityConfig{
                                 .requestMatchers(HttpMethod.POST, "/comments/{commentId}/**").authenticated()
                                 .requestMatchers(HttpMethod.GET, "/universities/**").permitAll()
                                 .requestMatchers(HttpMethod.GET, "/departments").permitAll()
-                                .anyRequest().denyAll());
+                                .anyRequest().denyAll())
+                .httpBasic(basic -> basic.authenticationEntryPoint(customAuthenticationEntryPoint))
+                .exceptionHandling(Customizer.withDefaults());
+
         return http.build();
     }
 
-    /*public CorsFilter corsFilter() {
+    @Bean
+    public CorsFilter corsFilter() {
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         CorsConfiguration config = new CorsConfiguration();
         config.setAllowCredentials(true);
@@ -72,6 +82,5 @@ public class SecurityConfig{
         config.addAllowedMethod("PATCH");
         source.registerCorsConfiguration("/**", config);
         return new CorsFilter(source);
-    }*/
-
+    }
 }
