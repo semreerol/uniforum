@@ -1,0 +1,29 @@
+version: '3.8'
+services:
+  db:
+    image: postgres:16.3
+    environment:
+      POSTGRES_DB: uniforumDB
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: root
+    ports:
+      - "5432:5432"
+    volumes:
+      - db_data:/var/lib/postgresql/data
+
+  api:
+    image: uniforum:0.0.1
+    environment:
+      DB_URL: jdbc:postgresql://db:5432/uniforumDB
+      DB_USERNAME: postgres
+      DB_PASSWORD: root
+      APP_SECRET: 67B2B2EAEE6EB722C87172B36264D5641774DEFA8D5FA17C8583349394
+      EXPIRES_IN: 7200000
+      REFRESH_TOKEN_EXPIRES_IN: 604800
+    ports:
+      - "8080:8080"
+    depends_on:
+      - db
+
+volumes:
+  db_data:
