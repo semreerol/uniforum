@@ -1,0 +1,32 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: uniforum
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: uniforum
+  template:
+    metadata:
+      labels:
+        app: uniforum
+    spec:
+      containers:
+        - name: uniforum
+          image: uniforum:0.0.1
+          ports:
+            - containerPort: 8080
+          env:
+            - name: DB_URL
+              value: jdbc:postgresql://postgres:5432/uniforumDB
+            - name: DB_USERNAME
+              value: postgres
+            - name: DB_PASSWORD
+              value: root
+            - name: APP_SECRET
+              value: 67B2B2EAEE6EB722C87172B36264D5641774DEFA8D5FA17C8583349394
+            - name: EXPIRES_IN
+              value: "7200000"
+            - name: REFRESH_TOKEN_EXPIRES_IN
+              value: "604800"
